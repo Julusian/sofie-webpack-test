@@ -1,5 +1,5 @@
 import { DDP } from './common/namespace.js';
-import { Meteor } from '../meteor';
+import { Meteor ,__meteor_runtime_config__} from '../meteor';
 import { Retry } from '../retry'
 import { Reload } from '../reload'
 
@@ -22,7 +22,7 @@ Meteor.refresh = () => {};
 // _translateUrl in stream_client_common.js not force absolute paths
 // to be treated like relative paths. See also
 // stream_client_common.js #RationalizingRelativeDDPURLs
-const runtimeConfig = /*typeof __meteor_runtime_config__ !== 'undefined' ? __meteor_runtime_config__ :*/ Object.create(null);
+const runtimeConfig = typeof __meteor_runtime_config__ !== 'undefined' ? __meteor_runtime_config__ : Object.create(null);
 const ddpUrl = runtimeConfig.DDP_DEFAULT_CONNECTION_URL || '/';
 
 const retry = new Retry();

@@ -1,6 +1,6 @@
-import LocalCollection from './local_collection.js';
 import EJSON from 'ejson'
 import { GeoJSON } from '../geojson-utils'
+import { MongoID } from '../mongo-id';
 
 export const hasOwn = Object.prototype.hasOwnProperty;
 
@@ -127,7 +127,7 @@ export const ELEMENT_OPERATORS = {
       }
 
       return value => (
-        value !== undefined && LocalCollection._f._type(value) === operand
+        value !== undefined && bigBlobF._type(value) === operand
       );
     },
   },
@@ -199,7 +199,7 @@ export const ELEMENT_OPERATORS = {
   $elemMatch: {
     dontExpandLeafArrays: true,
     compileElementSelector(operand, valueSelector, matcher) {
-      if (!LocalCollection._isPlainObject(operand)) {
+      if (!_isPlainObject(operand)) {
         throw Error('$elemMatch need an object');
       }
 
@@ -404,7 +404,7 @@ const VALUE_OPERATORS = {
     // marked with a $geometry property, though legacy coordinates can be
     // matched using $geometry.
     let maxDistance, point, distance;
-    if (LocalCollection._isPlainObject(operand) && hasOwn.call(operand, '$geometry')) {
+    if (_isPlainObject(operand) && hasOwn.call(operand, '$geometry')) {
       // GeoJSON "2dsphere" mode.
       maxDistance = operand.$maxDistance;
       point = operand.$geometry;
@@ -555,7 +555,7 @@ function compileArrayOfDocumentSelectors(selectors, matcher, inElemMatch) {
   }
 
   return selectors.map(subSelector => {
-    if (!LocalCollection._isPlainObject(subSelector)) {
+    if (!_isPlainObject(subSelector)) {
       throw Error('$or/$and/$nor entries need to be full objects');
     }
 
@@ -695,7 +695,7 @@ export function equalityElementMatcher(elementSelector) {
     return value => value == null;
   }
 
-  return value => LocalCollection._f._equal(elementSelector, value);
+  return value => bigBlobF._equal(elementSelector, value);
 }
 
 function everythingMatcher(docOrBranchedValues) {
@@ -842,7 +842,7 @@ function invertBranchedMatcher(branchedMatcher) {
 }
 
 export function isIndexable(obj) {
-  return Array.isArray(obj) || LocalCollection._isPlainObject(obj);
+  return Array.isArray(obj) || _isPlainObject(obj);
 }
 
 export function isNumericKey(s) {
@@ -853,7 +853,7 @@ export function isNumericKey(s) {
 // with $.  Unless inconsistentOK is set, throws if some keys begin with $ and
 // others don't.
 export function isOperatorObject(valueSelector, inconsistentOK) {
-  if (!LocalCollection._isPlainObject(valueSelector)) {
+  if (!_isPlainObject(valueSelector)) {
     return false;
   }
 
@@ -895,7 +895,7 @@ function makeInequality(cmpValueComparator) {
         operand = null;
       }
 
-      const operandType = LocalCollection._f._type(operand);
+      const operandType = bigBlobF._type(operand);
 
       return value => {
         if (value === undefined) {
@@ -904,11 +904,11 @@ function makeInequality(cmpValueComparator) {
 
         // Comparisons are never true among things of different type (except
         // null vs undefined).
-        if (LocalCollection._f._type(value) !== operandType) {
+        if (bigBlobF._type(value) !== operandType) {
           return false;
         }
 
-        return cmpValueComparator(LocalCollection._f._cmp(value, operand));
+        return cmpValueComparator(bigBlobF._cmp(value, operand));
       };
     },
   };
@@ -1068,7 +1068,7 @@ export function makeLookupFunction(key, options = {}) {
     if (Array.isArray(firstLevel) &&
         !(isNumericKey(parts[1]) && options.forSort)) {
       firstLevel.forEach((branch, arrayIndex) => {
-        if (LocalCollection._isPlainObject(branch)) {
+        if (_isPlainObject(branch)) {
           appendToResult(lookupRest(branch, arrayIndices.concat(arrayIndex)));
         }
       });
@@ -1077,6 +1077,10 @@ export function makeLookupFunction(key, options = {}) {
     return result;
   };
 }
+
+export const _isPlainObject = x => {
+  return x && bigBlobF._type(x) === 3;
+};
 
 // Object exported only for unit testing.
 // Use it to export private functions to test in Tinytest.
@@ -1281,13 +1285,21 @@ export function populateDocumentWithQueryFields(query, document = {}) {
     });
   } else {
     // Handle meteor-specific shortcut for selecting _id
-    if (LocalCollection._selectorIsId(query)) {
+    if (selectorIsId(query)) {
       insertIntoDocument(document, '_id', query);
     }
   }
 
   return document;
 }
+
+// Is this selector just shorthand for lookup by _id?
+export function selectorIsId (selector) {
+  return typeof selector === 'number' ||
+  typeof selector === 'string' ||
+  selector instanceof MongoID.ObjectID
+};
+
 
 // Traverses the keys of passed projection and constructs a tree where all
 // leaves are either all True or all False
@@ -1410,3 +1422,235 @@ function validateObject(object, path) {
     });
   }
 }
+
+const Decimal = /*Package['mongo-decimal']?.Decimal ||*/ class DecimalStub {}
+
+export const bigBlobF = {
+  // XXX for _all and _in, consider building 'inquery' at compile time..
+  _type(v) {
+    if (typeof v === 'number') {
+      return 1;
+    }
+
+    if (typeof v === 'string') {
+      return 2;
+    }
+
+    if (typeof v === 'boolean') {
+      return 8;
+    }
+
+    if (Array.isArray(v)) {
+      return 4;
+    }
+
+    if (v === null) {
+      return 10;
+    }
+
+    // note that typeof(/x/) === "object"
+    if (v instanceof RegExp) {
+      return 11;
+    }
+
+    if (typeof v === 'function') {
+      return 13;
+    }
+
+    if (v instanceof Date) {
+      return 9;
+    }
+
+    if (EJSON.isBinary(v)) {
+      return 5;
+    }
+
+    if (v instanceof MongoID.ObjectID) {
+      return 7;
+    }
+
+    if (v instanceof Decimal) {
+      return 1;
+    }
+
+    // object
+    return 3;
+
+    // XXX support some/all of these:
+    // 14, symbol
+    // 15, javascript code with scope
+    // 16, 18: 32-bit/64-bit integer
+    // 17, timestamp
+    // 255, minkey
+    // 127, maxkey
+  },
+
+  // deep equality test: use for literal document and array matches
+  _equal(a, b) {
+    return EJSON.equals(a, b, {keyOrderSensitive: true});
+  },
+
+  // maps a type code to a value that can be used to sort values of different
+  // types
+  _typeorder(t) {
+    // http://www.mongodb.org/display/DOCS/What+is+the+Compare+Order+for+BSON+Types
+    // XXX what is the correct sort position for Javascript code?
+    // ('100' in the matrix below)
+    // XXX minkey/maxkey
+    return [
+      -1,  // (not a type)
+      1,   // number
+      2,   // string
+      3,   // object
+      4,   // array
+      5,   // binary
+      -1,  // deprecated
+      6,   // ObjectID
+      7,   // bool
+      8,   // Date
+      0,   // null
+      9,   // RegExp
+      -1,  // deprecated
+      100, // JS code
+      2,   // deprecated (symbol)
+      100, // JS code
+      1,   // 32-bit int
+      8,   // Mongo timestamp
+      1    // 64-bit int
+    ][t];
+  },
+
+  // compare two values of unknown type according to BSON ordering
+  // semantics. (as an extension, consider 'undefined' to be less than
+  // any other value.) return negative if a is less, positive if b is
+  // less, or 0 if equal
+  _cmp(a, b) {
+    if (a === undefined) {
+      return b === undefined ? 0 : -1;
+    }
+
+    if (b === undefined) {
+      return 1;
+    }
+
+    let ta = bigBlobF._type(a);
+    let tb = bigBlobF._type(b);
+
+    const oa = bigBlobF._typeorder(ta);
+    const ob = bigBlobF._typeorder(tb);
+
+    if (oa !== ob) {
+      return oa < ob ? -1 : 1;
+    }
+
+    // XXX need to implement this if we implement Symbol or integers, or
+    // Timestamp
+    if (ta !== tb) {
+      throw Error('Missing type coercion logic in _cmp');
+    }
+
+    if (ta === 7) { // ObjectID
+      // Convert to string.
+      ta = tb = 2;
+      a = a.toHexString();
+      b = b.toHexString();
+    }
+
+    if (ta === 9) { // Date
+      // Convert to millis.
+      ta = tb = 1;
+      a = a.getTime();
+      b = b.getTime();
+    }
+
+    if (ta === 1) { // double
+      if (a instanceof Decimal) {
+        return a.minus(b).toNumber();
+      } else {
+        return a - b;
+      }
+    }
+
+    if (tb === 2) // string
+      return a < b ? -1 : a === b ? 0 : 1;
+
+    if (ta === 3) { // Object
+      // this could be much more efficient in the expected case ...
+      const toArray = object => {
+        const result = [];
+
+        Object.keys(object).forEach(key => {
+          result.push(key, object[key]);
+        });
+
+        return result;
+      };
+
+      return bigBlobF._cmp(toArray(a), toArray(b));
+    }
+
+    if (ta === 4) { // Array
+      for (let i = 0; ; i++) {
+        if (i === a.length) {
+          return i === b.length ? 0 : -1;
+        }
+
+        if (i === b.length) {
+          return 1;
+        }
+
+        const s = bigBlobF._cmp(a[i], b[i]);
+        if (s !== 0) {
+          return s;
+        }
+      }
+    }
+
+    if (ta === 5) { // binary
+      // Surprisingly, a small binary blob is always less than a large one in
+      // Mongo.
+      if (a.length !== b.length) {
+        return a.length - b.length;
+      }
+
+      for (let i = 0; i < a.length; i++) {
+        if (a[i] < b[i]) {
+          return -1;
+        }
+
+        if (a[i] > b[i]) {
+          return 1;
+        }
+      }
+
+      return 0;
+    }
+
+    if (ta === 8) { // boolean
+      if (a) {
+        return b ? 0 : 1;
+      }
+
+      return b ? -1 : 0;
+    }
+
+    if (ta === 10) // null
+      return 0;
+
+    if (ta === 11) // regexp
+      throw Error('Sorting not supported on regular expression'); // XXX
+
+    // 13: javascript code
+    // 14: symbol
+    // 15: javascript code with scope
+    // 16: 32-bit integer
+    // 17: timestamp
+    // 18: 64-bit integer
+    // 255: minkey
+    // 127: maxkey
+    if (ta === 13) // javascript code
+      throw Error('Sorting not supported on Javascript code'); // XXX
+
+    throw Error('Unknown type to sort');
+  },
+};

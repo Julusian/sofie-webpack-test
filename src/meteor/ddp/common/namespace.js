@@ -15,6 +15,8 @@ const allConnections = [];
  */
 export const DDP = {};
 
+Meteor.DDP = DDP;
+
 // This is private but it's used in a few places. accounts-base uses
 // it to get the current user. Meteor.setTimeout and friends clear
 // it. We can probably find a better way to factor this.

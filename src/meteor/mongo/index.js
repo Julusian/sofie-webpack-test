@@ -17,6 +17,8 @@ import { AllowDeny } from '../allow-deny'
  */
 const Mongo = {};
 
+LocalCollection.Mongo = Mongo;
+
 /**
  * @summary Constructor for a Collection
  * @locus Anywhere

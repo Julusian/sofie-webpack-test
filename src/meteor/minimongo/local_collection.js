@@ -1,4 +1,3 @@
-import Cursor from './cursor.js';
 import ObserveHandle from './observe_handle.js';
 import {
   hasOwn,
@@ -7,14 +6,19 @@ import {
   isOperatorObject,
   populateDocumentWithQueryFields,
   projectionDetails,
-  MinimongoError
+  MinimongoError,
+  compileDocumentSelector,
+  nothingMatcher,
+  expandArraysInBranches,
+  makeLookupFunction,
+  selectorIsId,
+  bigBlobF,
+  _isPlainObject,
 } from './common.js';
 import { Meteor }  from '../meteor'
 import EJSON from 'ejson'
 import { MongoID } from '../mongo-id'
 import { Random } from '../random'
-import Matcher from './matcher.js';
-import Sorter from './sorter.js';
 import { DiffSequence } from '../diff-sequence'
 import { Tracker } from '../tracker'
 import { IdMap } from '../id-map'
@@ -23,7 +27,7 @@ import { OrderedDict } from '../ordered-dict'
 // XXX type checking on selectors (graceful error if malformed)
 
 // LocalCollection: a set of documents that supports queries and modifiers.
-export default class LocalCollection {
+export class LocalCollection {
   constructor(name) {
     this.name = name;
     // _id -> document (also containing id)
@@ -209,7 +213,7 @@ export default class LocalCollection {
       return result;
     }
 
-    const matcher = new Matcher(selector);
+    const matcher = new LocalCollection.Matcher(selector);
     const remove = [];
 
     this._eachPossiblyMatchingDoc(selector, (doc, id) => {
@@ -356,7 +360,7 @@ export default class LocalCollection {
       options = {};
     }
 
-    const matcher = new Matcher(selector, true);
+    const matcher = new LocalCollection.Matcher(selector, true);
 
     // Save the original results of any query that we might need to
     // _recomputeResults on, because _modifyAndNotify will mutate the objects in
@@ -642,7 +646,6 @@ export default class LocalCollection {
   }
 }
 
-LocalCollection.Cursor = Cursor;
 
 LocalCollection.ObserveHandle = ObserveHandle;
 
@@ -1113,9 +1116,7 @@ LocalCollection._isModificationMod = mod => {
 // XXX maybe this should be EJSON.isObject, though EJSON doesn't know about
 // RegExp
 // XXX note that _type(undefined) === 3!!!!
-LocalCollection._isPlainObject = x => {
-  return x && LocalCollection._f._type(x) === 3;
-};
+LocalCollection._isPlainObject = _isPlainObject
 
 // XXX need a strategy for passing the binding of $ into this
 // function, from the compiled selector
@@ -1399,11 +1400,7 @@ LocalCollection._removeFromResults = (query, doc) => {
 };
 
 // Is this selector just shorthand for lookup by _id?
-LocalCollection._selectorIsId = selector =>
-  typeof selector === 'number' ||
-  typeof selector === 'string' ||
-  selector instanceof MongoID.ObjectID
-;
+LocalCollection._selectorIsId = selectorIsId;
 
 // Is the selector just lookup by _id (shorthand or not)?
 LocalCollection._selectorIsIdPerhapsAsObject = selector =>
@@ -1695,7 +1692,7 @@ const MODIFIERS = {
       // actually an extension of the Node driver, so it won't work
       // server-side. Could be confusing!
       // XXX is it correct that we don't do geo-stuff here?
-      sortFunction = new Sorter(arg.$sort).getComparator();
+      sortFunction = new LocalCollection.Sorter(arg.$sort).getComparator();
 
       toPush.forEach(element => {
         if (LocalCollection._f._type(element) !== 3) {
@@ -1841,7 +1838,7 @@ const MODIFIERS = {
       // to permit stuff like {$pull: {a: {$gt: 4}}}.. something
       // like {$gt: 4} is not normally a complete selector.
       // same issue as $elemMatch possibly?
-      const matcher = new Matcher(arg);
+      const matcher = new LocalCollection.Matcher(arg);
 
       out = toPull.filter(element => !matcher.documentMatches(element).result);
     } else {
@@ -2037,4 +2034,941 @@ function findModTarget(doc, keyparts, options = {}) {
   }
 
   // notreached
+}
+
+
+
+// The minimongo selector compiler!
+
+// Terminology:
+//  - a 'selector' is the EJSON object representing a selector
+//  - a 'matcher' is its compiled form (whether a full Minimongo.Matcher
+//    object or one of the component lambdas that matches parts of it)
+//  - a 'result object' is an object with a 'result' field and maybe
+//    distance and arrayIndices.
+//  - a 'branched value' is an object with a 'value' field and maybe
+//    'dontIterate' and 'arrayIndices'.
+//  - a 'document' is a top-level object that can be stored in a collection.
+//  - a 'lookup function' is a function that takes in a document and returns
+//    an array of 'branched values'.
+//  - a 'branched matcher' maps from an array of branched values to a result
+//    object.
+//  - an 'element matcher' maps from a single value to a bool.
+
+// Main entry point.
+//   var matcher = new Minimongo.Matcher({a: {$gt: 5}});
+//   if (matcher.documentMatches({a: 7})) ...
+LocalCollection.Matcher = class Matcher {
+  constructor(selector, isUpdate) {
+    // A set (object mapping string -> *) of all of the document paths looked
+    // at by the selector. Also includes the empty string if it may look at any
+    // path (eg, $where).
+    this._paths = {};
+    // Set to true if compilation finds a $near.
+    this._hasGeoQuery = false;
+    // Set to true if compilation finds a $where.
+    this._hasWhere = false;
+    // Set to false if compilation finds anything other than a simple equality
+    // or one or more of '$gt', '$gte', '$lt', '$lte', '$ne', '$in', '$nin' used
+    // with scalars as operands.
+    this._isSimple = true;
+    // Set to a dummy document which always matches this Matcher. Or set to null
+    // if such document is too hard to find.
+    this._matchingDocument = undefined;
+    // A clone of the original selector. It may just be a function if the user
+    // passed in a function; otherwise is definitely an object (eg, IDs are
+    // translated into {_id: ID} first. Used by canBecomeTrueByModifier and
+    // Sorter._useWithMatcher.
+    this._selector = null;
+    this._docMatcher = this._compileSelector(selector);
+    // Set to true if selection is done for an update operation
+    // Default is false
+    // Used for $near array update (issue #3599)
+    this._isUpdate = isUpdate;
+  }
+
+  documentMatches(doc) {
+    if (doc !== Object(doc)) {
+      throw Error('documentMatches needs a document');
+    }
+
+    return this._docMatcher(doc);
+  }
+
+  hasGeoQuery() {
+    return this._hasGeoQuery;
+  }
+
+  hasWhere() {
+    return this._hasWhere;
+  }
+
+  isSimple() {
+    return this._isSimple;
+  }
+
+  // Given a selector, return a function that takes one argument, a
+  // document. It returns a result object.
+  _compileSelector(selector) {
+    // you can pass a literal function instead of a selector
+    if (selector instanceof Function) {
+      this._isSimple = false;
+      this._selector = selector;
+      this._recordPathUsed('');
+
+      return doc => ({result: !!selector.call(doc)});
+    }
+
+    // shorthand -- scalar _id
+    if (LocalCollection._selectorIsId(selector)) {
+      this._selector = {_id: selector};
+      this._recordPathUsed('_id');
+
+      return doc => ({result: EJSON.equals(doc._id, selector)});
+    }
+
+    // protect against dangerous selectors.  falsey and {_id: falsey} are both
+    // likely programmer error, and not what you want, particularly for
+    // destructive operations.
+    if (!selector || hasOwn.call(selector, '_id') && !selector._id) {
+      this._isSimple = false;
+      return nothingMatcher;
+    }
+
+    // Top level can't be an array or true or binary.
+    if (Array.isArray(selector) ||
+        EJSON.isBinary(selector) ||
+        typeof selector === 'boolean') {
+      throw new Error(`Invalid selector: ${selector}`);
+    }
+
+    this._selector = EJSON.clone(selector);
+
+    return compileDocumentSelector(selector, this, {isRoot: true});
+  }
+
+  // Returns a list of key paths the given selector is looking for. It includes
+  // the empty string if there is a $where.
+  _getPaths() {
+    return Object.keys(this._paths);
+  }
+
+  _recordPathUsed(path) {
+    this._paths[path] = true;
+  }
+}
+
+// helpers used by compiled selector code
+LocalCollection._f = bigBlobF
+
+
+  // Give a sort spec, which can be in any of these forms:
+  //   {"key1": 1, "key2": -1}
+  //   [["key1", "asc"], ["key2", "desc"]]
+  //   ["key1", ["key2", "desc"]]
+  //
+  // (.. with the first form being dependent on the key enumeration
+  // behavior of your javascript VM, which usually does what you mean in
+  // this case if the key names don't look like integers ..)
+  //
+  // return a function that takes two objects, and returns -1 if the
+  // first object comes first in order, 1 if the second object comes
+  // first, or 0 if neither object comes before the other.
+  
+  LocalCollection.Sorter = class Sorter {
+    constructor(spec) {
+      this._sortSpecParts = [];
+      this._sortFunction = null;
+  
+      const addSpecPart = (path, ascending) => {
+        if (!path) {
+          throw Error('sort keys must be non-empty');
+        }
+  
+        if (path.charAt(0) === '$') {
+          throw Error(`unsupported sort key: ${path}`);
+        }
+  
+        this._sortSpecParts.push({
+          ascending,
+          lookup: makeLookupFunction(path, {forSort: true}),
+          path
+        });
+      };
+  
+      if (spec instanceof Array) {
+        spec.forEach(element => {
+          if (typeof element === 'string') {
+            addSpecPart(element, true);
+          } else {
+            addSpecPart(element[0], element[1] !== 'desc');
+          }
+        });
+      } else if (typeof spec === 'object') {
+        Object.keys(spec).forEach(key => {
+          addSpecPart(key, spec[key] >= 0);
+        });
+      } else if (typeof spec === 'function') {
+        this._sortFunction = spec;
+      } else {
+        throw Error(`Bad sort specification: ${JSON.stringify(spec)}`);
+      }
+  
+      // If a function is specified for sorting, we skip the rest.
+      if (this._sortFunction) {
+        return;
+      }
+  
+      // To implement affectedByModifier, we piggy-back on top of Matcher's
+      // affectedByModifier code; we create a selector that is affected by the
+      // same modifiers as this sort order. This is only implemented on the
+      // server.
+      if (this.affectedByModifier) {
+        const selector = {};
+  
+        this._sortSpecParts.forEach(spec => {
+          selector[spec.path] = 1;
+        });
+  
+        this._selectorForAffectedByModifier = new LocalCollection.Matcher(selector);
+      }
+  
+      this._keyComparator = composeComparators(
+        this._sortSpecParts.map((spec, i) => this._keyFieldComparator(i))
+      );
+    }
+  
+    getComparator(options) {
+      // If sort is specified or have no distances, just use the comparator from
+      // the source specification (which defaults to "everything is equal".
+      // issue #3599
+      // https://docs.mongodb.com/manual/reference/operator/query/near/#sort-operation
+      // sort effectively overrides $near
+      if (this._sortSpecParts.length || !options || !options.distances) {
+        return this._getBaseComparator();
+      }
+  
+      const distances = options.distances;
+  
+      // Return a comparator which compares using $near distances.
+      return (a, b) => {
+        if (!distances.has(a._id)) {
+          throw Error(`Missing distance for ${a._id}`);
+        }
+  
+        if (!distances.has(b._id)) {
+          throw Error(`Missing distance for ${b._id}`);
+        }
+  
+        return distances.get(a._id) - distances.get(b._id);
+      };
+    }
+  
+    // Takes in two keys: arrays whose lengths match the number of spec
+    // parts. Returns negative, 0, or positive based on using the sort spec to
+    // compare fields.
+    _compareKeys(key1, key2) {
+      if (key1.length !== this._sortSpecParts.length ||
+          key2.length !== this._sortSpecParts.length) {
+        throw Error('Key has wrong length');
+      }
+  
+      return this._keyComparator(key1, key2);
+    }
+  
+    // Iterates over each possible "key" from doc (ie, over each branch), calling
+    // 'cb' with the key.
+    _generateKeysFromDoc(doc, cb) {
+      if (this._sortSpecParts.length === 0) {
+        throw new Error('can\'t generate keys without a spec');
+      }
+  
+      const pathFromIndices = indices => `${indices.join(',')},`;
+  
+      let knownPaths = null;
+  
+      // maps index -> ({'' -> value} or {path -> value})
+      const valuesByIndexAndPath = this._sortSpecParts.map(spec => {
+        // Expand any leaf arrays that we find, and ignore those arrays
+        // themselves.  (We never sort based on an array itself.)
+        let branches = expandArraysInBranches(spec.lookup(doc), true);
+  
+        // If there are no values for a key (eg, key goes to an empty array),
+        // pretend we found one undefined value.
+        if (!branches.length) {
+          branches = [{ value: void 0 }];
+        }
+  
+        const element = Object.create(null);
+        let usedPaths = false;
+  
+        branches.forEach(branch => {
+          if (!branch.arrayIndices) {
+            // If there are no array indices for a branch, then it must be the
+            // only branch, because the only thing that produces multiple branches
+            // is the use of arrays.
+            if (branches.length > 1) {
+              throw Error('multiple branches but no array used?');
+            }
+  
+            element[''] = branch.value;
+            return;
+          }
+  
+          usedPaths = true;
+  
+          const path = pathFromIndices(branch.arrayIndices);
+  
+          if (hasOwn.call(element, path)) {
+            throw Error(`duplicate path: ${path}`);
+          }
+  
+          element[path] = branch.value;
+  
+          // If two sort fields both go into arrays, they have to go into the
+          // exact same arrays and we have to find the same paths.  This is
+          // roughly the same condition that makes MongoDB throw this strange
+          // error message.  eg, the main thing is that if sort spec is {a: 1,
+          // b:1} then a and b cannot both be arrays.
+          //
+          // (In MongoDB it seems to be OK to have {a: 1, 'a.x.y': 1} where 'a'
+          // and 'a.x.y' are both arrays, but we don't allow this for now.
+          // #NestedArraySort
+          // XXX achieve full compatibility here
+          if (knownPaths && !hasOwn.call(knownPaths, path)) {
+            throw Error('cannot index parallel arrays');
+          }
+        });
+  
+        if (knownPaths) {
+          // Similarly to above, paths must match everywhere, unless this is a
+          // non-array field.
+          if (!hasOwn.call(element, '') &&
+              Object.keys(knownPaths).length !== Object.keys(element).length) {
+            throw Error('cannot index parallel arrays!');
+          }
+        } else if (usedPaths) {
+          knownPaths = {};
+  
+          Object.keys(element).forEach(path => {
+            knownPaths[path] = true;
+          });
+        }
+  
+        return element;
+      });
+  
+      if (!knownPaths) {
+        // Easy case: no use of arrays.
+        const soleKey = valuesByIndexAndPath.map(values => {
+          if (!hasOwn.call(values, '')) {
+            throw Error('no value in sole key case?');
+          }
+  
+          return values[''];
+        });
+  
+        cb(soleKey);
+  
+        return;
+      }
+  
+      Object.keys(knownPaths).forEach(path => {
+        const key = valuesByIndexAndPath.map(values => {
+          if (hasOwn.call(values, '')) {
+            return values[''];
+          }
+  
+          if (!hasOwn.call(values, path)) {
+            throw Error('missing path?');
+          }
+  
+          return values[path];
+        });
+  
+        cb(key);
+      });
+    }
+  
+    // Returns a comparator that represents the sort specification (but not
+    // including a possible geoquery distance tie-breaker).
+    _getBaseComparator() {
+      if (this._sortFunction) {
+        return this._sortFunction;
+      }
+  
+      // If we're only sorting on geoquery distance and no specs, just say
+      // everything is equal.
+      if (!this._sortSpecParts.length) {
+        return (doc1, doc2) => 0;
+      }
+  
+      return (doc1, doc2) => {
+        const key1 = this._getMinKeyFromDoc(doc1);
+        const key2 = this._getMinKeyFromDoc(doc2);
+        return this._compareKeys(key1, key2);
+      };
+    }
+  
+    // Finds the minimum key from the doc, according to the sort specs.  (We say
+    // "minimum" here but this is with respect to the sort spec, so "descending"
+    // sort fields mean we're finding the max for that field.)
+    //
+    // Note that this is NOT "find the minimum value of the first field, the
+    // minimum value of the second field, etc"... it's "choose the
+    // lexicographically minimum value of the key vector, allowing only keys which
+    // you can find along the same paths".  ie, for a doc {a: [{x: 0, y: 5}, {x:
+    // 1, y: 3}]} with sort spec {'a.x': 1, 'a.y': 1}, the only keys are [0,5] and
+    // [1,3], and the minimum key is [0,5]; notably, [0,3] is NOT a key.
+    _getMinKeyFromDoc(doc) {
+      let minKey = null;
+  
+      this._generateKeysFromDoc(doc, key => {
+        if (minKey === null) {
+          minKey = key;
+          return;
+        }
+  
+        if (this._compareKeys(key, minKey) < 0) {
+          minKey = key;
+        }
+      });
+  
+      return minKey;
+    }
+  
+    _getPaths() {
+      return this._sortSpecParts.map(part => part.path);
+    }
+  
+    // Given an index 'i', returns a comparator that compares two key arrays based
+    // on field 'i'.
+    _keyFieldComparator(i) {
+      const invert = !this._sortSpecParts[i].ascending;
+  
+      return (key1, key2) => {
+        const compare = LocalCollection._f._cmp(key1[i], key2[i]);
+        return invert ? -compare : compare;
+      };
+    }
+  }
+  
+  // Given an array of comparators
+  // (functions (a,b)->(negative or positive or zero)), returns a single
+  // comparator which uses each comparator in order and returns the first
+  // non-zero value.
+  function composeComparators(comparatorArray) {
+    return (a, b) => {
+      for (let i = 0; i < comparatorArray.length; ++i) {
+        const compare = comparatorArray[i](a, b);
+        if (compare !== 0) {
+          return compare;
+        }
+      }
+  
+      return 0;
+    };
+  }
+
+
+
+// Cursor: a specification for a particular subset of documents, w/ a defined
+// order, limit, and offset.  creating a Cursor with LocalCollection.find(),
+LocalCollection.Cursor = class Cursor {
+  // don't call this ctor directly.  use LocalCollection.find().
+  constructor(collection, selector, options = {}) {
+    this.collection = collection;
+    this.sorter = null;
+    this.matcher = new LocalCollection.Matcher(selector);
+
+    if (LocalCollection._selectorIsIdPerhapsAsObject(selector)) {
+      // stash for fast _id and { _id }
+      this._selectorId = hasOwn.call(selector, '_id')
+        ? selector._id
+        : selector;
+    } else {
+      this._selectorId = undefined;
+
+      if (this.matcher.hasGeoQuery() || options.sort) {
+        this.sorter = new LocalCollection.Sorter(options.sort || []);
+      }
+    }
+
+    this.skip = options.skip || 0;
+    this.limit = options.limit;
+    this.fields = options.projection || options.fields;
+
+    this._projectionFn = LocalCollection._compileProjection(this.fields || {});
+
+    this._transform = LocalCollection.wrapTransform(options.transform);
+
+    // by default, queries register w/ Tracker when it is available.
+    if (typeof Tracker !== 'undefined') {
+      this.reactive = options.reactive === undefined ? true : options.reactive;
+    }
+  }
+
+  /**
+   * @summary Returns the number of documents that match a query.
+   * @memberOf Mongo.Cursor
+   * @method  count
+   * @instance
+   * @locus Anywhere
+   * @returns {Number}
+   */
+  count() {
+    if (this.reactive) {
+      // allow the observe to be unordered
+      this._depend({added: true, removed: true}, true);
+    }
+
+    return this._getRawObjects({
+      ordered: true,
+    }).length;
+  }
+
+  /**
+   * @summary Return all matching documents as an Array.
+   * @memberOf Mongo.Cursor
+   * @method  fetch
+   * @instance
+   * @locus Anywhere
+   * @returns {Object[]}
+   */
+  fetch() {
+    const result = [];
+
+    this.forEach(doc => {
+      result.push(doc);
+    });
+
+    return result;
+  }
+
+  [Symbol.iterator]() {
+    if (this.reactive) {
+      this._depend({
+        addedBefore: true,
+        removed: true,
+        changed: true,
+        movedBefore: true});
+    }
+
+    let index = 0;
+    const objects = this._getRawObjects({ordered: true});
+
+    return {
+      next: () => {
+        if (index < objects.length) {
+          // This doubles as a clone operation.
+          let element = this._projectionFn(objects[index++]);
+
+          if (this._transform)
+            element = this._transform(element);
+
+          return {value: element};
+        }
+
+        return {done: true};
+      }
+    };
+  }
+
+  /**
+   * @callback IterationCallback
+   * @param {Object} doc
+   * @param {Number} index
+   */
+  /**
+   * @summary Call `callback` once for each matching document, sequentially and
+   *          synchronously.
+   * @locus Anywhere
+   * @method  forEach
+   * @instance
+   * @memberOf Mongo.Cursor
+   * @param {IterationCallback} callback Function to call. It will be called
+   *                                     with three arguments: the document, a
+   *                                     0-based index, and <em>cursor</em>
+   *                                     itself.
+   * @param {Any} [thisArg] An object which will be the value of `this` inside
+   *                        `callback`.
+   */
+  forEach(callback, thisArg) {
+    if (this.reactive) {
+      this._depend({
+        addedBefore: true,
+        removed: true,
+        changed: true,
+        movedBefore: true});
+    }
+
+    this._getRawObjects({ordered: true}).forEach((element, i) => {
+      // This doubles as a clone operation.
+      element = this._projectionFn(element);
+
+      if (this._transform) {
+        element = this._transform(element);
+      }
+
+      callback.call(thisArg, element, i, this);
+    });
+  }
+
+  getTransform() {
+    return this._transform;
+  }
+
+  /**
+   * @summary Map callback over all matching documents.  Returns an Array.
+   * @locus Anywhere
+   * @method map
+   * @instance
+   * @memberOf Mongo.Cursor
+   * @param {IterationCallback} callback Function to call. It will be called
+   *                                     with three arguments: the document, a
+   *                                     0-based index, and <em>cursor</em>
+   *                                     itself.
+   * @param {Any} [thisArg] An object which will be the value of `this` inside
+   *                        `callback`.
+   */
+  map(callback, thisArg) {
+    const result = [];
+
+    this.forEach((doc, i) => {
+      result.push(callback.call(thisArg, doc, i, this));
+    });
+
+    return result;
+  }
+
+  // options to contain:
+  //  * callbacks for observe():
+  //    - addedAt (document, atIndex)
+  //    - added (document)
+  //    - changedAt (newDocument, oldDocument, atIndex)
+  //    - changed (newDocument, oldDocument)
+  //    - removedAt (document, atIndex)
+  //    - removed (document)
+  //    - movedTo (document, oldIndex, newIndex)
+  //
+  // attributes available on returned query handle:
+  //  * stop(): end updates
+  //  * collection: the collection this query is querying
+  //
+  // iff x is a returned query handle, (x instanceof
+  // LocalCollection.ObserveHandle) is true
+  //
+  // initial results delivered through added callback
+  // XXX maybe callbacks should take a list of objects, to expose transactions?
+  // XXX maybe support field limiting (to limit what you're notified on)
+
+  /**
+   * @summary Watch a query.  Receive callbacks as the result set changes.
+   * @locus Anywhere
+   * @memberOf Mongo.Cursor
+   * @instance
+   * @param {Object} callbacks Functions to call to deliver the result set as it
+   *                           changes
+   */
+  observe(options) {
+    return LocalCollection._observeFromObserveChanges(this, options);
+  }
+
+  /**
+   * @summary Watch a query. Receive callbacks as the result set changes. Only
+   *          the differences between the old and new documents are passed to
+   *          the callbacks.
+   * @locus Anywhere
+   * @memberOf Mongo.Cursor
+   * @instance
+   * @param {Object} callbacks Functions to call to deliver the result set as it
+   *                           changes
+   */
+  observeChanges(options) {
+    const ordered = LocalCollection._observeChangesCallbacksAreOrdered(options);
+
+    // there are several places that assume you aren't combining skip/limit with
+    // unordered observe.  eg, update's EJSON.clone, and the "there are several"
+    // comment in _modifyAndNotify
+    // XXX allow skip/limit with unordered observe
+    if (!options._allow_unordered && !ordered && (this.skip || this.limit)) {
+      throw new Error(
+        "Must use an ordered observe with skip or limit (i.e. 'addedBefore' " +
+        "for observeChanges or 'addedAt' for observe, instead of 'added')."
+      );
+    }
+
+    if (this.fields && (this.fields._id === 0 || this.fields._id === false)) {
+      throw Error('You may not observe a cursor with {fields: {_id: 0}}');
+    }
+
+    const distances = (
+      this.matcher.hasGeoQuery() &&
+      ordered &&
+      new LocalCollection._IdMap
+    );
+
+    const query = {
+      cursor: this,
+      dirty: false,
+      distances,
+      matcher: this.matcher, // not fast pathed
+      ordered,
+      projectionFn: this._projectionFn,
+      resultsSnapshot: null,
+      sorter: ordered && this.sorter
+    };
+
+    let qid;
+
+    // Non-reactive queries call added[Before] and then never call anything
+    // else.
+    if (this.reactive) {
+      qid = this.collection.next_qid++;
+      this.collection.queries[qid] = query;
+    }
+
+    query.results = this._getRawObjects({ordered, distances: query.distances});
+
+    if (this.collection.paused) {
+      query.resultsSnapshot = ordered ? [] : new LocalCollection._IdMap;
+    }
+
+    // wrap callbacks we were passed. callbacks only fire when not paused and
+    // are never undefined
+    // Filters out blacklisted fields according to cursor's projection.
+    // XXX wrong place for this?
+
+    // furthermore, callbacks enqueue until the operation we're working on is
+    // done.
+    const wrapCallback = fn => {
+      if (!fn) {
+        return () => {};
+      }
+
+      const self = this;
+      return function(/* args*/) {
+        if (self.collection.paused) {
+          return;
+        }
+
+        const args = arguments;
+
+        self.collection._observeQueue.queueTask(() => {
+          fn.apply(this, args);
+        });
+      };
+    };
+
+    query.added = wrapCallback(options.added);
+    query.changed = wrapCallback(options.changed);
+    query.removed = wrapCallback(options.removed);
+
+    if (ordered) {
+      query.addedBefore = wrapCallback(options.addedBefore);
+      query.movedBefore = wrapCallback(options.movedBefore);
+    }
+
+    if (!options._suppress_initial && !this.collection.paused) {
+      query.results.forEach(doc => {
+        const fields = EJSON.clone(doc);
+
+        delete fields._id;
+
+        if (ordered) {
+          query.addedBefore(doc._id, this._projectionFn(fields), null);
+        }
+
+        query.added(doc._id, this._projectionFn(fields));
+      });
+    }
+
+    const handle = Object.assign(new LocalCollection.ObserveHandle, {
+      collection: this.collection,
+      stop: () => {
+        if (this.reactive) {
+          delete this.collection.queries[qid];
+        }
+      }
+    });
+
+    if (this.reactive && Tracker.active) {
+      // XXX in many cases, the same observe will be recreated when
+      // the current autorun is rerun.  we could save work by
+      // letting it linger across rerun and potentially get
+      // repurposed if the same observe is performed, using logic
+      // similar to that of Meteor.subscribe.
+      Tracker.onInvalidate(() => {
+        handle.stop();
+      });
+    }
+
+    // run the observe callbacks resulting from the initial contents
+    // before we leave the observe.
+    this.collection._observeQueue.drain();
+
+    return handle;
+  }
+
+  // XXX Maybe we need a version of observe that just calls a callback if
+  // anything changed.
+  _depend(changers, _allow_unordered) {
+    if (Tracker.active) {
+      const dependency = new Tracker.Dependency;
+      const notify = dependency.changed.bind(dependency);
+
+      dependency.depend();
+
+      const options = {_allow_unordered, _suppress_initial: true};
+
+      ['added', 'addedBefore', 'changed', 'movedBefore', 'removed']
+        .forEach(fn => {
+          if (changers[fn]) {
+            options[fn] = notify;
+          }
+        });
+
+      // observeChanges will stop() when this computation is invalidated
+      this.observeChanges(options);
+    }
+  }
+
+  _getCollectionName() {
+    return this.collection.name;
+  }
+
+  // Returns a collection of matching objects, but doesn't deep copy them.
+  //
+  // If ordered is set, returns a sorted array, respecting sorter, skip, and
+  // limit properties of the query provided that options.applySkipLimit is
+  // not set to false (#1201). If sorter is falsey, no sort -- you get the
+  // natural order.
+  //
+  // If ordered is not set, returns an object mapping from ID to doc (sorter,
+  // skip and limit should not be set).
+  //
+  // If ordered is set and this cursor is a $near geoquery, then this function
+  // will use an _IdMap to track each distance from the $near argument point in
+  // order to use it as a sort key. If an _IdMap is passed in the 'distances'
+  // argument, this function will clear it and use it for this purpose
+  // (otherwise it will just create its own _IdMap). The observeChanges
+  // implementation uses this to remember the distances after this function
+  // returns.
+  _getRawObjects(options = {}) {
+    // By default this method will respect skip and limit because .fetch(),
+    // .forEach() etc... expect this behaviour. It can be forced to ignore
+    // skip and limit by setting applySkipLimit to false (.count() does this,
+    // for example)
+    const applySkipLimit = options.applySkipLimit !== false;
+
+    // XXX use OrderedDict instead of array, and make IdMap and OrderedDict
+    // compatible
+    const results = options.ordered ? [] : new LocalCollection._IdMap;
+
+    // fast path for single ID value
+    if (this._selectorId !== undefined) {
+      // If you have non-zero skip and ask for a single id, you get nothing.
+      // This is so it matches the behavior of the '{_id: foo}' path.
+      if (applySkipLimit && this.skip) {
+        return results;
+      }
+
+      const selectedDoc = this.collection._docs.get(this._selectorId);
+
+      if (selectedDoc) {
+        if (options.ordered) {
+          results.push(selectedDoc);
+        } else {
+          results.set(this._selectorId, selectedDoc);
+        }
+      }
+
+      return results;
+    }
+
+    // slow path for arbitrary selector, sort, skip, limit
+
+    // in the observeChanges case, distances is actually part of the "query"
+    // (ie, live results set) object.  in other cases, distances is only used
+    // inside this function.
+    let distances;
+    if (this.matcher.hasGeoQuery() && options.ordered) {
+      if (options.distances) {
+        distances = options.distances;
+        distances.clear();
+      } else {
+        distances = new LocalCollection._IdMap();
+      }
+    }
+
+    this.collection._docs.forEach((doc, id) => {
+      const matchResult = this.matcher.documentMatches(doc);
+
+      if (matchResult.result) {
+        if (options.ordered) {
+          results.push(doc);
+
+          if (distances && matchResult.distance !== undefined) {
+            distances.set(id, matchResult.distance);
+          }
+        } else {
+          results.set(id, doc);
+        }
+      }
+
+      // Override to ensure all docs are matched if ignoring skip & limit
+      if (!applySkipLimit) {
+        return true;
+      }
+
+      // Fast path for limited unsorted queries.
+      // XXX 'length' check here seems wrong for ordered
+      return (
+        !this.limit ||
+        this.skip ||
+        this.sorter ||
+        results.length !== this.limit
+      );
+    });
+
+    if (!options.ordered) {
+      return results;
+    }
+
+    if (this.sorter) {
+      results.sort(this.sorter.getComparator({distances}));
+    }
+
+    // Return the full set of results if there is no skip or limit or if we're
+    // ignoring them
+    if (!applySkipLimit || (!this.limit && !this.skip)) {
+      return results;
+    }
+
+    return results.slice(
+      this.skip,
+      this.limit ? this.limit + this.skip : results.length
+    );
+  }
+
+  _publishCursor(subscription) {
+    // // XXX minimongo should not depend on mongo-livedata!
+    // if (!Package.mongo) {
+    //   throw new Error(
+    //     'Can\'t publish from Minimongo without the `mongo` package.'
+    //   );
+    // }
+
+    if (!this.collection.name) {
+      throw new Error(
+        'Can\'t publish a cursor from a collection without a name.'
+      );
+    }
+
+    return LocalCollection.Mongo.Collection._publishCursor(
+      this,
+      subscription,
+      this.collection.name
+    );
+  }
 }
