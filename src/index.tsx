@@ -3,6 +3,38 @@ import ReactDOM from 'react-dom/client';
 import './index.css';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
+import { DDPClient } from './ddpClient';
+
+import './meteor/meteor';
+import './meteor/tracker';
+import './meteor/random';
+import './meteor/diff-sequence';
+import './meteor/ordered-dict';
+import './meteor/mongo-id';
+import './meteor/id-map';
+import './meteor/geojson-utils';
+import './meteor/minimongo';
+import './meteor/reactive-var';
+import './meteor/check';
+import './meteor/mongo';
+import './meteor/ddp';
+import './meteor/reload';
+import './meteor/retry';
+
+
+const ddp = new DDPClient({
+  host: 'localhost',
+  port: 3000,
+  debug: true
+});
+ddp.connect((err) => {
+  if (err){
+    console.error('Connection failed', err)
+  }
+});
+
+(window as any).ddp = ddp
+
 
 const root = ReactDOM.createRoot(
   document.getElementById('root') as HTMLElement
