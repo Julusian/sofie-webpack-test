@@ -447,3 +447,11 @@ Meteor.absoluteUrl = function (path, options) {
 
 export { Meteor }
 window.Meteor = Meteor
+
+Meteor.startup = function(cb) {
+  cb()
+}
+
+Meteor.user = function() {
+  return null
+}

@@ -1,7 +1,7 @@
 import * as MongoNpmModule from 'mongodb';
 // tslint:disable-next-line:no-duplicate-imports
 import { Collection as MongoCollection, CreateIndexesOptions, Db as MongoDb, Hint, IndexSpecification, MongoClient } from 'mongodb';
-import { Meteor } from 'meteor/meteor';
+import { Meteor } from '../meteor';
 
     // Based on https://github.com/microsoft/TypeScript/issues/28791#issuecomment-443520161
     type UnionOmit<T, K extends keyof any> = T extends T ? Pick<T, Exclude<keyof T, K>> : never;

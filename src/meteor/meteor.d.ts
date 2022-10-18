@@ -1,4 +1,4 @@
-import { Mongo } from 'meteor/mongo';
+import { Mongo } from './mongo';
 import { EJSONable, EJSONableProperty } from 'meteor/ejson';
 import { Blaze } from 'meteor/blaze';
 import { DDP } from 'meteor/ddp';
@@ -15,6 +15,11 @@ import { DDP } from 'meteor/ddp';
         var isServer: boolean;
         /** True if running in production environment. */
         var isProduction: boolean;
+        /** True if running in production environment. */
+        var isTest: boolean;
+        /** True if running in production environment. */
+        var isDevelopment: boolean;
+        
         /**
          * `Meteor.release` is a string containing the name of the release with which the project was built (for example, `"1.2.3"`). It is `undefined` if the project was built using a git checkout
          * of Meteor.
