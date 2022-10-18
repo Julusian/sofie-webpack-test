@@ -1,4 +1,4 @@
-import { Meteor } from 'meteor/meteor'
+import { Meteor } from '../meteor/meteor'
 import { logger } from './logging'
 import { getCurrentTime, systemTime } from './lib'
 import { MeteorCall } from './api/methods'

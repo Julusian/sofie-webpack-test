@@ -1,7 +1,7 @@
 import * as React from 'react'
 import { Redirect } from 'react-router'
 import { Translated, withTracker } from './ReactMeteorData/ReactMeteorData'
-import { Mongo } from 'meteor/mongo'
+import { Mongo } from '../../meteor/mongo'
 import { withTranslation } from 'react-i18next'
 import { Studios } from '../../lib/collections/Studios'
 import { MeteorCall } from '../../lib/api/methods'

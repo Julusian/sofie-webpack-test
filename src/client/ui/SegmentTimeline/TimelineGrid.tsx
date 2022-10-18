@@ -13,13 +13,13 @@ import { SegmentTimelinePartClass } from './Parts/SegmentTimelinePart'
 import { RundownTimingContext } from '../../lib/rundownTiming'
 import { PartInstanceId } from '@sofie-automation/corelib/dist/dataModel/Ids'
 
-// We're cheating a little: Fontface
-declare class FontFace {
-	loaded: Promise<FontFace>
-	constructor(font: string, url: string, options: object)
+// // We're cheating a little: Fontface
+// declare class FontFace {
+// 	loaded: Promise<FontFace>
+// 	constructor(font: string, url: string, options: object)
 
-	load(): void
-}
+// 	load(): void
+// }
 
 const LABEL_FONT_URL = 'url("/fonts/roboto-gh-pages/fonts/Light/Roboto-Light.woff")'
 const LABEL_COLOR = 'rgb(80,80,80)'
@@ -359,7 +359,7 @@ export class TimelineGrid extends React.Component<ITimelineGridProps> {
 				if (!gridFont && typeof FontFace !== 'undefined') {
 					gridFont = new FontFace('GridTimecodeFont', LABEL_FONT_URL, {
 						style: 'normal',
-						weight: 100,
+						weight: '100',
 					})
 					gridFont.load()
 					gridFont.loaded

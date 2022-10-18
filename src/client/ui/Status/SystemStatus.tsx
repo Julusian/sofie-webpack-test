@@ -407,7 +407,7 @@ interface ICoreItemProps {
 
 interface ICoreItemState {}
 
-const PackageInfo = require('../../../package.json')
+const PackageInfo = require('../../../../package.json')
 
 export const CoreItem = reacti18next.withTranslation()(
 	class CoreItem extends React.Component<Translated<ICoreItemProps>, ICoreItemState> {

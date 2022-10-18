@@ -7,9 +7,7 @@ import { RewindAllSegmentsIcon } from '../../lib/ui/icons/rewindAllSegmentsIcon'
 import { Lottie } from '@crello/react-lottie'
 import { NotificationCenterPanelToggle } from '../../lib/notifications/NotificationCenterPanel'
 
-// @ts-expect-error Not recognized by Typescript
 import * as On_Air_MouseOut from './On_Air_MouseOut.json'
-// @ts-expect-error Not recognized by Typescript
 import * as On_Air_MouseOver from './On_Air_MouseOver.json'
 import { SupportPopUpToggle } from '../SupportPopUp'
 import classNames from 'classnames'

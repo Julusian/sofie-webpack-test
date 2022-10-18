@@ -3,7 +3,7 @@ import { registerIndex } from '../database'
 import { CollectionName } from '@sofie-automation/corelib/dist/dataModel/Collections'
 
 import { Blueprint } from '@sofie-automation/corelib/dist/dataModel/Blueprint'
-export { Blueprint }
+export type  { Blueprint }
 
 export const Blueprints = createMongoCollection<Blueprint>(CollectionName.Blueprints)
 

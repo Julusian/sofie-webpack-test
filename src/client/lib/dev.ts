@@ -1,7 +1,6 @@
 import { getCurrentTime, Collections } from '../../lib/lib'
-import { Session } from 'meteor/session'
-import { Meteor } from 'meteor/meteor'
-import { Tracker } from 'meteor/tracker'
+import { Meteor } from '../../meteor/meteor'
+import { Tracker } from '../../meteor/tracker'
 import * as _ from 'underscore'
 import { MeteorCall } from '../../lib/api/methods'
 import { StudioTimeline } from '../ui/TestTools/Timeline'
@@ -17,7 +16,6 @@ Meteor.startup(() => {
 
 window['Collections'] = Collections
 window['getCurrentTime'] = getCurrentTime
-window['Session'] = Session
 
 function setDebugData() {
 	Tracker.autorun(() => {

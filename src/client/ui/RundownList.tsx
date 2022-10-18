@@ -137,14 +137,15 @@ export const RundownList = translateWithTracker((): IRundownsListProps => {
 					}
 				}
 
-				return extendMandadory<RundownPlaylist, RundownPlaylistUi>(playlist, {
+				return {
+					...playlist,
 					rundowns,
 					unsyncedRundowns,
 					showStyles,
 					rundownAirStatus: airStatuses.join(', '),
 					rundownStatus: statuses.join(', '),
 					studioName: studios.find((s) => s._id === playlist.studioId)?.name || '',
-				})
+				}
 			}),
 		rundownLayouts,
 	}

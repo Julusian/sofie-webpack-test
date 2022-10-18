@@ -4,7 +4,7 @@ import { faPencilAlt, faTrash, faCheck, faExclamationTriangle, faPlus } from '@f
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { IOutputLayer } from '@sofie-automation/blueprints-integration'
 import { literal } from '@sofie-automation/corelib/dist/lib'
-import { Random } from 'meteor/random'
+import { Random } from '../../../../meteor/random'
 import Tooltip from 'rc-tooltip'
 import { withTranslation } from 'react-i18next'
 import { ShowStyleBase, ShowStyleBases } from '../../../../lib/collections/ShowStyleBases'

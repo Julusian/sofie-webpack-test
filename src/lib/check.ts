@@ -1,4 +1,4 @@
-import { check as MeteorCheck, Match as orgMatch } from 'meteor/check'
+import { check as MeteorCheck, Match as orgMatch } from '../meteor/check'
 
 /* tslint:disable variable-name */
 

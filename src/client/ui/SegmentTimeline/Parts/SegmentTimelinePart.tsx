@@ -5,7 +5,7 @@ import { withTranslation, WithTranslation } from 'react-i18next'
 
 import ClassNames from 'classnames'
 import { RundownPlaylist } from '../../../../lib/collections/RundownPlaylists'
-import { SegmentUi, PartUi, IOutputLayerUi, PieceUi, LIVE_LINE_TIME_PADDING } from '../SegmentTimelineContainer'
+import { SegmentUi, PartUi, IOutputLayerUi, PieceUi,  } from '../SegmentTimelineContainer'
 import {
 	TimingDataResolution,
 	TimingTickResolution,
@@ -33,6 +33,7 @@ import { OutputGroup } from './OutputGroup'
 import { InvalidPartCover } from './InvalidPartCover'
 import { ISourceLayer } from '@sofie-automation/blueprints-integration'
 import { UIStudio } from '../../../../lib/api/studios'
+import { LIVE_LINE_TIME_PADDING } from '../Constants'
 
 export const SegmentTimelineLineElementId = 'rundown__segment__line__'
 export const SegmentTimelinePartElementId = 'rundown__segment__part__'

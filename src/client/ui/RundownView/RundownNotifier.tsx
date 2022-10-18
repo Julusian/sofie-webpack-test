@@ -1,7 +1,7 @@
 import * as React from 'react'
 import * as _ from 'underscore'
-import { Meteor } from 'meteor/meteor'
-import { Tracker } from 'meteor/tracker'
+import { Meteor } from '../../../meteor/meteor'
+import { Tracker } from '../../../meteor/tracker'
 import {
 	NotificationCenter,
 	NotificationList,
@@ -18,7 +18,7 @@ import { PeripheralDevice } from '../../../lib/collections/PeripheralDevices'
 import { Parts, Part } from '../../../lib/collections/Parts'
 import { getCurrentTime, unprotectString } from '../../../lib/lib'
 import { PubSub, meteorSubscribe } from '../../../lib/api/pubsub'
-import { ReactiveVar } from 'meteor/reactive-var'
+import { ReactiveVar } from '../../../meteor/reactive-var'
 import { Segments, Segment } from '../../../lib/collections/Segments'
 import { Rundown } from '../../../lib/collections/Rundowns'
 import { doModalDialog } from '../../lib/ModalDialog'

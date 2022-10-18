@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react'
-import { Meteor } from 'meteor/meteor'
+import { Meteor } from '../../../meteor/meteor'
 import { PieceLifespan } from '@sofie-automation/blueprints-integration'
 import { PubSub } from '../../../lib/api/pubsub'
 import { PartInstances } from '../../../lib/collections/PartInstances'
@@ -14,7 +14,7 @@ import {
 import { SpeechSynthesiser } from '../../lib/speechSynthesis'
 import { SegmentList } from './SegmentList'
 import { unprotectString } from '../../../lib/lib'
-import { LIVELINE_HISTORY_SIZE as TIMELINE_LIVELINE_HISTORY_SIZE } from '../SegmentTimeline/SegmentTimelineContainer'
+import { LIVELINE_HISTORY_SIZE as TIMELINE_LIVELINE_HISTORY_SIZE } from '../SegmentTimeline/Constants'
 
 export const LIVELINE_HISTORY_SIZE = TIMELINE_LIVELINE_HISTORY_SIZE
 

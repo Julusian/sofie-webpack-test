@@ -1,4 +1,4 @@
-import { Mongo } from 'meteor/mongo'
+import { Mongo } from '../../../meteor/mongo'
 import { ISourceLayer } from '@sofie-automation/blueprints-integration'
 import React, { useContext, useState, useEffect } from 'react'
 import { assertNever } from '../../../lib/lib'

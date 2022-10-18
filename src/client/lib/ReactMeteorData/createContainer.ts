@@ -2,7 +2,7 @@
  * Container helper using react-meteor-data.
  */
 
-import { Meteor } from 'meteor/meteor'
+import { Meteor } from '../../../meteor/meteor'
 import { withTracker } from './ReactMeteorData'
 
 let hasDisplayedWarning = false

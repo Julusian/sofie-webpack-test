@@ -1,5 +1,5 @@
 import { ClientAPI } from '../client'
-import { Meteor } from 'meteor/meteor'
+import { Meteor } from '../../../meteor/meteor'
 import { UserError, UserErrorMessage } from '@sofie-automation/corelib/dist/error'
 
 describe('ClientAPI', () => {

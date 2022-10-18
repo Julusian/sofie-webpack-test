@@ -1,5 +1,5 @@
-import { Meteor } from 'meteor/meteor'
-import { Tracker } from 'meteor/tracker'
+import { Meteor } from '../../meteor/meteor'
+import { Tracker } from '../../meteor/tracker'
 import { Time } from '@sofie-automation/blueprints-integration'
 import { getCurrentTime, stringifyError } from '../../lib/lib'
 import { MeteorCall } from '../../lib/api/methods'

@@ -9,7 +9,7 @@ import {
 } from './RundownView/RundownTiming/withTiming'
 import { withTranslation } from 'react-i18next'
 import { MeteorReactComponent } from '../lib/MeteorReactComponent'
-import { Meteor } from 'meteor/meteor'
+import { Meteor } from '../../meteor/meteor'
 
 // These are examples of how to write different types of components
 

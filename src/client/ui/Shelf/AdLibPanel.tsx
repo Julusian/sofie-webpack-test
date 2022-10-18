@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useEffect } from 'react'
 import _ from 'underscore'
-import { Meteor } from 'meteor/meteor'
+import { Meteor } from '../../../meteor/meteor'
 import { useTracker } from '../../lib/ReactMeteorData/react-meteor-data'
 import { useTranslation } from 'react-i18next'
 import { Rundown } from '../../../lib/collections/Rundowns'

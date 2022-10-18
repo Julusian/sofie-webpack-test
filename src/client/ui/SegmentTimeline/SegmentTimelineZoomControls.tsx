@@ -3,7 +3,7 @@ import { getElementWidth } from '../../utils/dimensions'
 import { getElementDocumentOffset } from '../../utils/positions'
 import { onElementResize, offElementResize } from '../../lib/resizeObserver'
 import { LeftArrow, RightArrow } from '../../lib/ui/icons/segment'
-import { LIVELINE_HISTORY_SIZE } from './SegmentTimelineContainer'
+import { LIVELINE_HISTORY_SIZE } from './Constants'
 
 interface IPropsHeader {
 	scrollLeft: number

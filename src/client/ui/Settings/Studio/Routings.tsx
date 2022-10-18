@@ -1,6 +1,6 @@
 import ClassNames from 'classnames'
 import * as React from 'react'
-import { Meteor } from 'meteor/meteor'
+import { Meteor } from '../../../../meteor/meteor'
 import * as _ from 'underscore'
 import {
 	Studio,

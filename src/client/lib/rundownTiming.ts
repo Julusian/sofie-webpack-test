@@ -741,7 +741,7 @@ export interface RundownTimingContext {
 	/** Whether the next break is also the last */
 	breakIsLastRundown?: boolean
 	/** Was this time context calculated during a high-resolution tick */
-	isLowResolution: boolean
+	isLowResolution?: boolean
 }
 
 /**

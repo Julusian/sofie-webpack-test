@@ -1,5 +1,5 @@
 import * as React from 'react'
-import { Meteor } from 'meteor/meteor'
+import { Meteor } from '../../../meteor/meteor'
 import * as _ from 'underscore'
 import ClassNames from 'classnames'
 import {
@@ -30,7 +30,7 @@ import { Rundowns, Rundown } from '../../../lib/collections/Rundowns'
 import { check } from '../../../lib/check'
 import { BucketId, PartInstanceId, RundownPlaylistId } from '@sofie-automation/corelib/dist/dataModel/Ids'
 
-const PackageInfo = require('../../../package.json')
+const PackageInfo = require('../../../../package.json')
 
 interface IProps {
 	layout: RundownLayoutBase

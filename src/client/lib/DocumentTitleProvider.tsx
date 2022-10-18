@@ -3,7 +3,7 @@ import * as React from 'react'
 import { translateWithTracker, Translated } from './ReactMeteorData/ReactMeteorData'
 import { CoreSystem, ICoreSystem } from '../../lib/collections/CoreSystem'
 
-import { ReactiveVar } from 'meteor/reactive-var'
+import { ReactiveVar } from '../../meteor/reactive-var'
 import { isRunningInPWA } from './lib'
 
 /**

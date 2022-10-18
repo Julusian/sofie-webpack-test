@@ -14,7 +14,7 @@ import { SegmentTimelinePartElementId } from '../SegmentTimeline/Parts/SegmentTi
 import { CurrentPartRemaining } from '../RundownView/RundownTiming/CurrentPartRemaining'
 import { getAllowSpeaking } from '../../lib/localStorage'
 import RundownViewEventBus, { HighlightEvent, RundownViewEvents } from '../RundownView/RundownViewEventBus'
-import { Meteor } from 'meteor/meteor'
+import { Meteor } from '../../../meteor/meteor'
 import { StoryboardPartTransitions } from './StoryboardPartTransitions'
 import { PartDisplayDuration } from '../RundownView/RundownTiming/PartDuration'
 import { InvalidPartCover } from '../SegmentTimeline/Parts/InvalidPartCover'

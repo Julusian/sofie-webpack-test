@@ -1,7 +1,7 @@
 import React from 'react'
 import { faExclamationTriangle } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { Meteor } from 'meteor/meteor'
+import { Meteor } from '../../../../meteor/meteor'
 import Tooltip from 'rc-tooltip'
 import { MeteorCall } from '../../../../lib/api/methods'
 import { Studio } from '../../../../lib/collections/Studios'

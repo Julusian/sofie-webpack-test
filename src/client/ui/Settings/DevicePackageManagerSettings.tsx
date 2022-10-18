@@ -6,7 +6,7 @@ import { Translated, translateWithTracker } from '../../lib/ReactMeteorData/reac
 import { Spinner } from '../../lib/Spinner'
 import { MeteorReactComponent } from '../../lib/MeteorReactComponent'
 import { doModalDialog } from '../../lib/ModalDialog'
-import { Meteor } from 'meteor/meteor'
+import { Meteor } from '../../../meteor/meteor'
 import { stringifyError } from '@sofie-automation/corelib/dist/lib'
 import { PeripheralDeviceId } from '@sofie-automation/corelib/dist/dataModel/Ids'
 

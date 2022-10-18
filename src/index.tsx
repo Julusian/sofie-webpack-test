@@ -22,7 +22,7 @@ import './meteor/reload';
 import './meteor/retry';
 
 
-import './client/styles/main.scss'
+import './client/styles/_ROOT.scss'
 
 import './client/main'
 

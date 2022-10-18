@@ -1,4 +1,4 @@
-import { Tracker } from 'meteor/tracker'
+import { Tracker } from '../meteor/tracker'
 
 export class ReactiveMap<T> {
 	private baseMap = new Map<string, T>()

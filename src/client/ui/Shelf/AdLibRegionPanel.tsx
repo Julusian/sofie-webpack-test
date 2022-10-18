@@ -30,7 +30,7 @@ import { withMediaObjectStatus } from '../SegmentTimeline/withMediaObjectStatus'
 import { ensureHasTrailingSlash } from '../../lib/lib'
 import { ISourceLayer } from '@sofie-automation/blueprints-integration'
 import { UIStudios } from '../Collections'
-import { Meteor } from 'meteor/meteor'
+import { Meteor } from '../../../meteor/meteor'
 
 interface IState {
 	objId?: string

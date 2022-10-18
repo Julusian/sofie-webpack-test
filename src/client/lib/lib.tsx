@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react'
-import { Meteor } from 'meteor/meteor'
+import { Meteor } from '../../meteor/meteor'
 import _ from 'underscore'
 import { getCurrentTime, systemTime, Time } from '../../lib/lib'
 

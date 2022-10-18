@@ -1,6 +1,6 @@
 import * as React from 'react'
 import type { Sorensen } from '@sofie-automation/sorensen'
-import CoreIcons from '@nrk/core-icons/jsx'
+import * as CoreIcons from '@nrk/core-icons/jsx'
 import Escape from 'react-escape'
 import { SorensenContext } from '../../../SorensenContext'
 import { Settings } from '../../../../../lib/Settings'

@@ -1,5 +1,5 @@
-import { Meteor } from 'meteor/meteor'
-import { DDP } from 'meteor/ddp'
+import { Meteor } from '../../meteor/meteor'
+import { DDP } from '../../meteor/ddp'
 import * as React from 'react'
 import * as _ from 'underscore'
 
@@ -112,7 +112,7 @@ export class ConnectionStatusNotifier extends WithManagedTracker {
 	}
 
 	private getStatusText(
-		status: DDP.Status,
+		status: any,
 		reason: string | undefined,
 		retryTime: number | undefined
 	): string | React.ReactElement<HTMLElement> | null {
@@ -138,7 +138,7 @@ export class ConnectionStatusNotifier extends WithManagedTracker {
 		return null
 	}
 
-	private createNewStatusNotification(meteorStatus: DDP.DDPStatus): Notification {
+	private createNewStatusNotification(meteorStatus: any): Notification {
 		const { status, reason, retryTime, connected } = meteorStatus
 		const t = this._translator
 		const notification = new Notification(

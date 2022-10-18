@@ -8,7 +8,7 @@ import { PeripheralDevices, PeripheralDevice } from '../../../../lib/collections
 import { EditAttribute, EditAttributeBase } from '../../../lib/EditAttribute'
 import { ModalDialog } from '../../../lib/ModalDialog'
 import { Translated } from '../../../lib/ReactMeteorData/react-meteor-data'
-import { Meteor } from 'meteor/meteor'
+import { Meteor } from '../../../../meteor/meteor'
 import { DeviceItem } from '../../Status/SystemStatus'
 import {
 	ConfigManifestEntry,

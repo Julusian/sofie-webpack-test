@@ -6,7 +6,7 @@ import StudioContext from '../../RundownView/StudioContext'
 import { StoryboardSecondaryPiece } from './StoryboardSecondaryPiece'
 import { getCurrentTime } from '../../../../lib/lib'
 import { useInvalidateTimeout } from '../../../lib/lib'
-import { Meteor } from 'meteor/meteor'
+import { Meteor } from '../../../../meteor/meteor'
 import { HOVER_TIMEOUT } from '../../Shelf/DashboardPieceButton'
 import { PieceInstanceId } from '@sofie-automation/corelib/dist/dataModel/Ids'
 

@@ -1,7 +1,7 @@
 import { omit, protectString, unprotectObject } from '../lib'
 import * as _ from 'underscore'
 import { LookaheadMode, ExpectedPackage } from '@sofie-automation/blueprints-integration'
-import { Meteor } from 'meteor/meteor'
+import { Meteor } from '../../meteor/meteor'
 import { ObserveChangesForHash, createMongoCollection } from './lib'
 import { registerIndex } from '../database'
 import { ExpectedPackageDB } from './ExpectedPackages'

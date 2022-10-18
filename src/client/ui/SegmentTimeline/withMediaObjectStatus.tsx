@@ -1,6 +1,6 @@
 import * as React from 'react'
-import { Meteor } from 'meteor/meteor'
-import { Tracker } from 'meteor/tracker'
+import { Meteor } from '../../../meteor/meteor'
+import { Tracker } from '../../../meteor/tracker'
 import { PieceUi } from './SegmentTimelineContainer'
 import { MeteorReactComponent } from '../../lib/MeteorReactComponent'
 import { ISourceLayer } from '@sofie-automation/blueprints-integration'

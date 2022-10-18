@@ -14,7 +14,7 @@ import {
 import { SpeechSynthesiser } from '../../lib/speechSynthesis'
 import { SegmentStoryboard } from './SegmentStoryboard'
 import { unprotectString } from '../../../lib/lib'
-import { LIVELINE_HISTORY_SIZE as TIMELINE_LIVELINE_HISTORY_SIZE } from '../SegmentTimeline/SegmentTimelineContainer'
+import { LIVELINE_HISTORY_SIZE as TIMELINE_LIVELINE_HISTORY_SIZE } from '../SegmentTimeline/Constants'
 
 export const LIVELINE_HISTORY_SIZE = TIMELINE_LIVELINE_HISTORY_SIZE
 
@@ -137,8 +137,8 @@ export const SegmentStoryboardContainer = withResolvedSegment<IProps>(function S
 
 			const partInstance = PartInstances.findOne(props.playlist.nextPartInstanceId, {
 				fields: {
-					//@ts-expect-error typescript doesnt like it
 					segmentId: 1,
+					//@ts-expect-error typescript doesnt like it
 					'part._id': 1,
 				},
 			})

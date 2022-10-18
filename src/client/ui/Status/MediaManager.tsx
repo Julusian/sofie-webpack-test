@@ -1,5 +1,5 @@
 import * as React from 'react'
-import CoreIcons from '@nrk/core-icons/jsx'
+import * as CoreIcons from '@nrk/core-icons/jsx'
 import { faChevronDown, faChevronRight, faCheck, faStopCircle, faRedo, faFlag } from '@fortawesome/free-solid-svg-icons'
 import * as VelocityReact from 'velocity-react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
@@ -352,13 +352,12 @@ export const MediaManagerStatus = translateWithTracker<IMediaManagerStatusProps,
 		return {
 			workFlows: MediaWorkFlows.find({})
 				.fetch()
-				.map((i) =>
-					extendMandadory<MediaWorkFlow, MediaWorkFlowUi>(i, {
-						steps: MediaWorkFlowSteps.find({
-							workFlowId: i._id,
-						}).fetch(),
-					})
-				),
+				.map((i) => ({
+					...i,
+					steps: MediaWorkFlowSteps.find({
+						workFlowId: i._id,
+					}).fetch(),
+				})),
 		}
 	}
 )(

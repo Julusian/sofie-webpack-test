@@ -8,7 +8,6 @@ import { computeSegmentDisplayDuration, RundownTiming, TimingEvent } from '../Ru
 import { UIStateStorage } from '../../lib/UIStateStorage'
 import { MeteorReactComponent } from '../../lib/MeteorReactComponent'
 import { PartExtended } from '../../../lib/Rundown'
-import { MAGIC_TIME_SCALE_FACTOR } from '../RundownView'
 import { SpeechSynthesiser } from '../../lib/speechSynthesis'
 import { getElementWidth } from '../../utils/dimensions'
 import { isMaintainingFocus, scrollToSegment, getHeaderHeight } from '../../lib/viewPort'
@@ -17,8 +16,8 @@ import { unprotectString, equalSets, equivalentArrays } from '../../../lib/lib'
 import { Settings } from '../../../lib/Settings'
 import { PartInstances } from '../../../lib/collections/PartInstances'
 import { Parts } from '../../../lib/collections/Parts'
-import { Tracker } from 'meteor/tracker'
-import { Meteor } from 'meteor/meteor'
+import { Tracker } from '../../../meteor/tracker'
+import { Meteor } from '../../../meteor/meteor'
 import RundownViewEventBus, {
 	RundownViewEvents,
 	GoToPartEvent,
@@ -35,18 +34,11 @@ import {
 import { computeSegmentDuration, RundownTimingContext } from '../../lib/rundownTiming'
 import { RundownViewShelf } from '../RundownView/RundownViewShelf'
 import { PartInstanceId, SegmentId } from '@sofie-automation/corelib/dist/dataModel/Ids'
+import { LIVELINE_HISTORY_SIZE, MAGIC_TIME_SCALE_FACTOR, SIMULATED_PLAYBACK_HARD_MARGIN, TIMELINE_RIGHT_PADDING } from './Constants'
 
 // Kept for backwards compatibility
-export { SegmentUi, PartUi, PieceUi, ISourceLayerUi, IOutputLayerUi } from '../SegmentContainer/withResolvedSegment'
+export type  { SegmentUi, PartUi, PieceUi, ISourceLayerUi, IOutputLayerUi } from '../SegmentContainer/withResolvedSegment'
 
-export const SIMULATED_PLAYBACK_SOFT_MARGIN = 0
-export const SIMULATED_PLAYBACK_HARD_MARGIN = 3500
-
-export const LIVE_LINE_TIME_PADDING = 150
-export const LIVELINE_HISTORY_SIZE = 100
-export const TIMELINE_RIGHT_PADDING =
-	// TODO: This is only temporary, for hands-on tweaking -- Jan Starzak, 2021-06-01
-	parseInt(localStorage.getItem('EXP_timeline_right_padding')!) || LIVELINE_HISTORY_SIZE + LIVE_LINE_TIME_PADDING
 const FALLBACK_ZOOM_FACTOR = MAGIC_TIME_SCALE_FACTOR
 export let MINIMUM_ZOOM_FACTOR = FALLBACK_ZOOM_FACTOR
 
@@ -426,7 +418,7 @@ export const SegmentTimelineContainer = withResolvedSegment(
 				this.partInstanceSubPartInstanceIds = partInstanceIds
 			})
 		}
-		private partInstanceSubDebounce: number | undefined
+		private partInstanceSubDebounce: NodeJS.Timeout | undefined
 		private subscribeToPieceInstances(partInstanceIds: PartInstanceId[]) {
 			// run the first subscribe immediately, to avoid unneccessary wait time during bootup
 			if (this.partInstanceSub === undefined) {

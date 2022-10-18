@@ -1,7 +1,7 @@
-import { ReactiveVar } from 'meteor/reactive-var'
+import { ReactiveVar } from '../../../meteor/reactive-var'
 import * as _ from 'underscore'
-import { Tracker } from 'meteor/tracker'
-import { Meteor } from 'meteor/meteor'
+import { Tracker } from '../../../meteor/tracker'
+import { Meteor } from '../../../meteor/meteor'
 import { EventEmitter } from 'events'
 import {
 	Time,

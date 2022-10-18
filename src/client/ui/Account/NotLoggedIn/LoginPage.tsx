@@ -1,6 +1,6 @@
 import * as React from 'react'
-import { Meteor } from 'meteor/meteor'
-import { Accounts } from 'meteor/accounts-base'
+import { Meteor } from '../../../../meteor/meteor'
+import { Accounts } from '../fake-accounts'
 import { Translated, translateWithTracker } from '../../../lib/ReactMeteorData/react-meteor-data'
 import { Link } from 'react-router-dom'
 import { RouteComponentProps } from 'react-router'

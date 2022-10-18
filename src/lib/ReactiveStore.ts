@@ -1,5 +1,5 @@
-import { Meteor } from 'meteor/meteor'
-import { Tracker } from 'meteor/tracker'
+import { Meteor } from '../meteor/meteor'
+import { Tracker } from '../meteor/tracker'
 import * as _ from 'underscore'
 import { getRandomString, lazyIgnore, ProtectedString } from './lib'
 

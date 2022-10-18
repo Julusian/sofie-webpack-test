@@ -1,6 +1,6 @@
 import { objectToXML } from '../util/object-to-xml'
 
-const PackageInfo = require('../../../../package.json')
+const PackageInfo = require('../../../../../package.json')
 
 export enum AckStatus {
 	ACK = 'ACK',

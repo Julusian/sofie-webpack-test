@@ -10,7 +10,7 @@ import * as _ from 'underscore'
 import { languageAnd } from '../../lib/language'
 import { TriggeredActionsEditor } from './components/triggeredActions/TriggeredActionsEditor'
 import { TFunction } from 'i18next'
-import { Meteor } from 'meteor/meteor'
+import { Meteor } from '../../../meteor/meteor'
 import { LogLevel } from '../../../lib/lib'
 
 interface IProps {}

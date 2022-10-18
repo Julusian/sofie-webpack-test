@@ -7,7 +7,7 @@ import {
 	ShowStyleBaseId,
 	StudioId,
 } from '@sofie-automation/corelib/dist/dataModel/Ids'
-import { Meteor } from 'meteor/meteor'
+import { Meteor } from '../../meteor/meteor'
 import { AdLibAction } from '../collections/AdLibActions'
 import { AdLibPiece } from '../collections/AdLibPieces'
 import { Blueprint } from '../collections/Blueprints'

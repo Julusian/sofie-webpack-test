@@ -1,5 +1,5 @@
 import * as React from 'react'
-import CoreIcon from '@nrk/core-icons/jsx'
+import * as CoreIcon from '@nrk/core-icons/jsx'
 import ClassNames from 'classnames'
 import * as VelocityReact from 'velocity-react'
 import { translateWithTracker, Translated, withTracker } from '../ReactMeteorData/ReactMeteorData'

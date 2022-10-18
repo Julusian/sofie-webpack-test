@@ -147,9 +147,10 @@ function getShowStyleBaseIdSegmentPartUi(
 				true
 			)
 
-			segment = extendMandadory<DBSegment, SegmentUi>(o.segmentExtended, {
+			segment = {
+				...o.segmentExtended,
 				items: o.parts,
-			})
+			}
 
 			partInstanceUi = o.parts.find((part) => part.instance._id === partInstance._id)
 		}

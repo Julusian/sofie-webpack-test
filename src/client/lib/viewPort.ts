@@ -124,7 +124,7 @@ export async function scrollToSegment(
 						.item(0)
 						?.children.item(0)
 					if (next) {
-						targetElement = next
+						targetElement = next as any
 						i--
 					} else {
 						i = 0

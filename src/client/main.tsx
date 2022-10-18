@@ -1,5 +1,5 @@
 import * as React from 'react'
-import { Meteor } from 'meteor/meteor'
+import { Meteor } from '../meteor/meteor'
 import { render } from 'react-dom'
 
 import { DndProvider } from 'react-dnd'

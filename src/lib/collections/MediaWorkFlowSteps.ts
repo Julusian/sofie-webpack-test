@@ -2,7 +2,7 @@ import { createMongoCollection } from './lib'
 import { registerIndex } from '../database'
 import { CollectionName } from '@sofie-automation/corelib/dist/dataModel/Collections'
 import { MediaWorkFlowStep } from '@sofie-automation/shared-lib/dist/core/model/MediaWorkFlowSteps'
-export { MediaWorkFlowStep }
+export  type { MediaWorkFlowStep }
 
 export const MediaWorkFlowSteps = createMongoCollection<MediaWorkFlowStep>(CollectionName.MediaWorkFlowSteps)
 

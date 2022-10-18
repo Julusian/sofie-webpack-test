@@ -16,18 +16,18 @@ import {
 	USER_AGENT_POINTER_PROPERTY,
 } from '../../lib/lib'
 import {
-	DashboardPanelInner,
 	dashboardElementStyle,
 	IDashboardPanelTrackedProps,
 	IDashboardPanelProps,
 } from './DashboardPanel'
+import { DashboardPanelInner } from "./DashboardPanelInner"
 import { unprotectString } from '../../../lib/lib'
 import { RundownUtils } from '../../lib/rundown'
 import { AdLibPieceUi, getNextPieceInstancesGrouped, getUnfinishedPieceInstancesGrouped } from '../../lib/shelf'
 import { ContextMenuTrigger } from '@jstarpl/react-contextmenu'
 import { ContextType, setShelfContextMenuContext } from './ShelfContextMenu'
 import { UIStudios } from '../Collections'
-import { Meteor } from 'meteor/meteor'
+import { Meteor } from '../../../meteor/meteor'
 
 export const TimelineDashboardPanel = translateWithTracker<
 	Translated<IAdLibPanelProps & IDashboardPanelProps>,

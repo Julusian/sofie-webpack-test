@@ -10,8 +10,8 @@ import {
 	Time,
 } from '@sofie-automation/blueprints-integration'
 import { TFunction } from 'i18next'
-import { Meteor } from 'meteor/meteor'
-import { Tracker } from 'meteor/tracker'
+import { Meteor } from '../../../meteor/meteor'
+import { Tracker } from '../../../meteor/tracker'
 import { MeteorCall } from '../methods'
 import { PartInstance, PartInstances } from '../../collections/PartInstances'
 import { Parts } from '../../collections/Parts'
@@ -30,7 +30,7 @@ import {
 	IWrappedAdLib,
 } from './actionFilterChainCompilers'
 import { ClientAPI } from '../client'
-import { ReactiveVar } from 'meteor/reactive-var'
+import { ReactiveVar } from '../../../meteor/reactive-var'
 import { PartId, PartInstanceId, RundownId, RundownPlaylistId } from '@sofie-automation/corelib/dist/dataModel/Ids'
 
 // as described in this issue: https://github.com/Microsoft/TypeScript/issues/14094

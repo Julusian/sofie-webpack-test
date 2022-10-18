@@ -1,7 +1,7 @@
 import * as i18next from 'i18next'
 import { NotificationCenter, Notification, NoticeLevel } from './notifications/notifications'
 import { ClientAPI } from '../../lib/api/client'
-import { Meteor } from 'meteor/meteor'
+import { Meteor } from '../../meteor/meteor'
 import { eventContextForLog } from './clientAPI'
 import { assertNever, Time } from '../../lib/lib'
 import { UserAction } from '../../lib/userAction'
@@ -183,7 +183,7 @@ export function doUserAction<Result>(
 							undefined,
 							NoticeLevel.CRITICAL,
 							t('Action {{actionName}} failed: {{error}}', {
-								error: translateMessage(res.error.message || res.error, t),
+								error: res.error.message  ? translateMessage(res.error.message, t) : res.error,
 								actionName: actionName,
 							}),
 							'userAction'

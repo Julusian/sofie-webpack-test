@@ -1,5 +1,5 @@
 import { ProtectedString } from './lib'
-import { Meteor } from 'meteor/meteor'
+import { Meteor } from '../meteor/meteor'
 import { AsyncMongoCollection, IndexSpecifier } from './collections/lib'
 
 interface CollectionsIndexes {

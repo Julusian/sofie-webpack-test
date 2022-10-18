@@ -1,5 +1,5 @@
-import { Meteor } from 'meteor/meteor'
-import { Mongo } from 'meteor/mongo'
+import { Meteor } from '../../meteor/meteor'
+import { Mongo } from '../../meteor/mongo'
 import { afterEachInFiber, testInFiber } from '../../__mocks__/helpers/jest'
 import { setLogLevel } from '../../server/logging'
 import {

@@ -1,6 +1,6 @@
 import { FindOptions } from '../collections/lib'
 import { LogLevel, protectString } from '../lib'
-import { Meteor } from 'meteor/meteor'
+import { Meteor } from '../../meteor/meteor'
 import { logger } from '../logging'
 import * as semver from 'semver'
 import { createMongoCollection, MongoCursor } from './lib'

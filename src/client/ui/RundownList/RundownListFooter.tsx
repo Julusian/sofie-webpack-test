@@ -5,7 +5,7 @@ import { StatusResponse } from '../../../lib/api/systemStatus'
 import { TOOLTIP_DEFAULT_DELAY } from '../../lib/lib'
 import { useTranslation } from 'react-i18next'
 
-const PackageInfo = require('../../../package.json') as Record<string, any>
+const PackageInfo = require('../../../../package.json') as Record<string, any>
 
 interface IProps {
 	systemStatus: StatusResponse

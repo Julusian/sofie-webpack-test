@@ -1,9 +1,9 @@
 /* eslint-disable react/prefer-stateless-function */
 
 import React, { useState, useEffect } from 'react'
-import { Meteor } from 'meteor/meteor'
-import { Mongo } from 'meteor/mongo'
-import { Tracker } from 'meteor/tracker'
+import { Meteor } from '../../../meteor/meteor'
+import { Mongo } from '../../../meteor/mongo'
+import { Tracker } from '../../../meteor/tracker'
 import { withTranslation, WithTranslation } from 'react-i18next'
 import { MeteorReactComponent } from '../MeteorReactComponent'
 import { meteorSubscribe, PubSubTypes } from '../../../lib/api/pubsub'

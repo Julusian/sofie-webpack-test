@@ -1,8 +1,8 @@
 import * as _ from 'underscore'
-import { ReactiveVar } from 'meteor/reactive-var'
-import { Tracker } from 'meteor/tracker'
+import { ReactiveVar } from '../../../meteor/reactive-var'
+import { Tracker } from '../../../meteor/tracker'
 import { meteorSubscribe, PubSubTypes } from '../../../lib/api/pubsub'
-import { Meteor } from 'meteor/meteor'
+import { Meteor } from '../../../meteor/meteor'
 
 export namespace ReactiveDataHelper {
 	const rVarCache: _.Dictionary<ReactiveVar<any>> = {}
@@ -118,7 +118,6 @@ export function memoizedIsolatedAutorun<T extends (...args: any) => any>(
 		result = isolatedAutorunsMem[fId].value
 		isolatedAutorunsMem[fId].dependancy.depend()
 	}
-	// @ts-expect-error it is assigned by the tracker
 	return result
 }
 
@@ -171,7 +170,6 @@ export function slowDownReactivity<T extends (...args: any) => any>(fnc: T, dela
 		if (invalidationTimeout) Meteor.clearTimeout(invalidationTimeout)
 	})
 
-	// @ts-expect-error it is assigned by the tracker
 	return result
 }
 

@@ -2,7 +2,7 @@ import * as React from 'react'
 import * as _ from 'underscore'
 import Velocity from 'velocity-animate'
 import ClassNames from 'classnames'
-import { Meteor } from 'meteor/meteor'
+import { Meteor } from '../../../meteor/meteor'
 import { Route } from 'react-router-dom'
 import { translateWithTracker, Translated } from '../../lib/ReactMeteorData/ReactMeteorData'
 import {
@@ -110,7 +110,6 @@ export class PrompterViewInner extends MeteorReactComponent<Translated<IProps & 
 
 	configOptions: PrompterConfig
 
-	// @ts-expect-error The manager inspects this instance
 	private _controller: PrompterControlManager
 
 	private checkWindowScroll: number | null = null

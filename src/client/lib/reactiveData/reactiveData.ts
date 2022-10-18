@@ -1,5 +1,5 @@
-import { Tracker } from 'meteor/tracker'
-import { ReactiveVar } from 'meteor/reactive-var'
+import { Tracker } from '../../../meteor/tracker'
+import { ReactiveVar } from '../../../meteor/reactive-var'
 import { Rundowns, Rundown, DBRundown } from '../../../lib/collections/Rundowns'
 import { Piece, Pieces } from '../../../lib/collections/Pieces'
 import { PeripheralDevice, PeripheralDevices } from '../../../lib/collections/PeripheralDevices'

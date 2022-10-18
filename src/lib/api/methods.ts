@@ -16,7 +16,7 @@ import { NewOrganizationAPI, OrganizationAPIMethods } from './organization'
 import { NewUserAPI, UserAPIMethods } from './user'
 import { SystemAPIMethods, SystemAPI } from './system'
 import { RundownNotificationsAPI, RundownNotificationsAPIMethods } from './rundownNotifications'
-import { Meteor } from 'meteor/meteor'
+import { Meteor } from '../../meteor/meteor'
 import { NewTriggeredActionsAPI, TriggeredActionsAPIMethods } from './triggeredActions'
 import { UserId } from '@sofie-automation/corelib/dist/dataModel/Ids'
 import {

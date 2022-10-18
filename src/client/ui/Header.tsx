@@ -1,6 +1,6 @@
 import * as React from 'react'
 import { WithTranslation } from 'react-i18next'
-import { Meteor } from 'meteor/meteor'
+import { Meteor } from '../../meteor/meteor'
 import { NavLink, Link } from 'react-router-dom'
 import { NotificationCenterPanelToggle, NotificationCenterPanel } from '../lib/notifications/NotificationCenterPanel'
 import { NotificationCenter, Notification, NoticeLevel } from '../lib/notifications/notifications'

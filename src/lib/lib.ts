@@ -2,7 +2,7 @@ import * as _ from 'underscore'
 import { AsyncMongoCollection } from './collections/lib'
 import { CollectionName } from '@sofie-automation/corelib/dist/dataModel/Collections'
 import { ITranslatableMessage } from '@sofie-automation/corelib/dist/TranslatableMessage'
-import { Meteor } from 'meteor/meteor'
+import { Meteor } from '../meteor/meteor'
 import { ProtectedString } from '@sofie-automation/corelib/dist/protectedString'
 import { logger } from './logging'
 import { MongoQuery } from './typings/meteor'
@@ -10,7 +10,7 @@ import { MongoQuery as CoreLibMongoQuery } from '@sofie-automation/corelib/dist/
 
 import { Time, TimeDuration } from '@sofie-automation/shared-lib/dist/lib/lib'
 import { stringifyError } from '@sofie-automation/corelib/dist/lib'
-export { Time, TimeDuration }
+export type { Time, TimeDuration }
 
 // Legacy compatability
 export * from '@sofie-automation/corelib/dist/protectedString'
@@ -193,7 +193,7 @@ function cleanOldCacheResult() {
 	})
 }
 const lazyIgnoreCache: { [name: string]: number } = {}
-export function lazyIgnore(name: string, f1: () => Promise<void> | void, t: number): void {
+export function lazyIgnore(name: string, f1: () => void , t: number): void {
 	// Don't execute the function f1 until the time t has passed.
 	// Subsequent calls will extend the lazyness and ignore the previous call
 
@@ -202,7 +202,7 @@ export function lazyIgnore(name: string, f1: () => Promise<void> | void, t: numb
 	}
 	lazyIgnoreCache[name] = Meteor.setTimeout(() => {
 		delete lazyIgnoreCache[name]
-		waitForPromise(f1())
+		f1()
 	}, t)
 }
 
@@ -233,87 +233,6 @@ export function toc(name: string = 'default', logStr?: string | Promise<any>[]):
 	}
 }
 
-// export function MeteorWrapAsync(func: Function, context?: Object): any {
-// 	// A variant of Meteor.wrapAsync to fix the bug
-// 	// https://github.com/meteor/meteor/issues/11120
-
-// 	return Meteor.wrapAsync((...args: any[]) => {
-// 		// Find the callback-function:
-// 		for (let i = args.length - 1; i >= 0; i--) {
-// 			if (typeof args[i] === 'function') {
-// 				if (i < args.length - 1) {
-// 					// The callback is not the last argument, make it so then:
-// 					const callback = args[i]
-// 					const fixedArgs = args
-// 					fixedArgs[i] = undefined
-// 					fixedArgs.push(callback)
-
-// 					func.apply(context, fixedArgs)
-// 					return
-// 				} else {
-// 					// The callback is the last argument, that's okay
-// 					func.apply(context, args)
-// 					return
-// 				}
-// 			}
-// 		}
-// 		throw new Meteor.Error(500, `Error in MeteorWrapAsync: No callback found!`)
-// 	})
-// }
-
-/**
- * Blocks the fiber until all the Promises have resolved
- */
-export function waitForPromiseAll<T1, T2, T3, T4, T5, T6>(
-	ps: [
-		T1 | PromiseLike<T1>,
-		T2 | PromiseLike<T2>,
-		T3 | PromiseLike<T3>,
-		T4 | PromiseLike<T4>,
-		T5 | PromiseLike<T5>,
-		T6 | PromiseLike<T6>
-	]
-): [T1, T2, T3, T4, T5, T6]
-export function waitForPromiseAll<T1, T2, T3, T4, T5>(
-	ps: [T1 | PromiseLike<T1>, T2 | PromiseLike<T2>, T3 | PromiseLike<T3>, T4 | PromiseLike<T4>, T5 | PromiseLike<T5>]
-): [T1, T2, T3, T4, T5]
-export function waitForPromiseAll<T1, T2, T3, T4>(
-	ps: [T1 | PromiseLike<T1>, T2 | PromiseLike<T2>, T3 | PromiseLike<T3>, T4 | PromiseLike<T4>]
-): [T1, T2, T3, T4]
-export function waitForPromiseAll<T1, T2, T3>(
-	ps: [T1 | PromiseLike<T1>, T2 | PromiseLike<T2>, T3 | PromiseLike<T3>]
-): [T1, T2, T3]
-export function waitForPromiseAll<T1, T2>(ps: [T1 | PromiseLike<T1>, T2 | PromiseLike<T2>]): [T1, T2]
-export function waitForPromiseAll<T>(ps: (T | PromiseLike<T>)[]): T[]
-export function waitForPromiseAll<T>(ps: (T | PromiseLike<T>)[]): T[] {
-	return waitForPromise(Promise.all(ps))
-}
-
-export type Awaited<T> = T extends PromiseLike<infer U> ? Awaited<U> : T
-
-/**
- * Convert a promise to a "synchronous" Fiber function
- * Makes the Fiber wait for the promise to resolve, then return the value of the promise.
- * If the fiber rejects, the function in the Fiber will "throw"
- */
-export const waitForPromise: <T>(p: Promise<T> | T) => Awaited<T> = Meteor.wrapAsync(function waitForPromise<T>(
-	p: Promise<T> | T,
-	cb: (err: any | null, result?: any) => Awaited<T>
-) {
-	if (Meteor.isClient) throw new Meteor.Error(500, `waitForPromise can't be used client-side`)
-	if (cb === undefined && typeof p === 'function') {
-		cb = p as any
-		p = undefined as any
-	}
-
-	Promise.resolve(p)
-		.then((result) => {
-			cb(null, result)
-		})
-		.catch((e) => {
-			cb(e)
-		})
-})
 /**
  * Convert a Fiber function into a promise
  * Makes the Fiber function to run in its own fiber and return a promise
@@ -390,13 +309,6 @@ export function firstIfArray<T>(value: unknown): T {
 	return _.isArray(value) ? _.first(value) : value
 }
 
-/**
- * Wait for specified time
- * @param time
- */
-export function waitTime(time: number): void {
-	waitForPromise(sleep(time))
-}
 export async function sleep(ms: number): Promise<void> {
 	return new Promise((resolve) => Meteor.setTimeout(resolve, ms))
 }

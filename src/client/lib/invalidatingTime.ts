@@ -1,4 +1,4 @@
-import { Tracker } from 'meteor/tracker'
+import { Tracker } from '../../meteor/tracker'
 import { getCurrentTime } from '../../lib/lib'
 
 /** Invalidate a reactive computation after a given amount of time */

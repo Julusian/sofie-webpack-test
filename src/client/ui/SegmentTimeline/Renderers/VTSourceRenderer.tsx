@@ -10,7 +10,6 @@ import { MediaObject } from '../../../../lib/collections/MediaObjects'
 import { PackageInfo } from '@sofie-automation/blueprints-integration'
 
 import { Lottie } from '@crello/react-lottie'
-// @ts-expect-error Not recognized by Typescript
 import * as loopAnimation from './icon-loop.json'
 import { withTranslation, WithTranslation } from 'react-i18next'
 import { VTContent } from '@sofie-automation/blueprints-integration'

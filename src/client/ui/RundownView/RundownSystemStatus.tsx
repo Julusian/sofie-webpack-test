@@ -1,4 +1,4 @@
-import { Meteor } from 'meteor/meteor'
+import { Meteor } from '../../../meteor/meteor'
 import * as React from 'react'
 import ClassNames from 'classnames'
 import * as _ from 'underscore'

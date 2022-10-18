@@ -1,6 +1,6 @@
 import ClassNames from 'classnames'
 import * as React from 'react'
-import { Meteor } from 'meteor/meteor'
+import { Meteor } from '../../../../meteor/meteor'
 import * as _ from 'underscore'
 import { Studio, Studios, DBStudio, StudioPackageContainer } from '../../../../lib/collections/Studios'
 import { EditAttribute, EditAttributeBase } from '../../../lib/EditAttribute'

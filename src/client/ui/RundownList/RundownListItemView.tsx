@@ -15,7 +15,7 @@ import { RundownLayoutsAPI } from '../../../lib/api/rundownLayouts'
 import { PlaylistTiming } from '@sofie-automation/corelib/dist/playout/rundownTiming'
 import { TOOLTIP_DEFAULT_DELAY } from '../../lib/lib'
 import { RundownPlaylists } from '../../../lib/collections/RundownPlaylists'
-import { Meteor } from 'meteor/meteor'
+import { Meteor } from '../../../meteor/meteor'
 
 interface IRundownListItemViewProps {
 	isActive: boolean

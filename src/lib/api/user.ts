@@ -1,4 +1,3 @@
-import { Accounts } from 'meteor/accounts-base'
 import { UserProfile } from '../../lib/collections/Users'
 import { protectString } from '../lib'
 import { DBOrganizationBase } from '../collections/Organization'
@@ -26,11 +25,12 @@ export async function createUser(newUser: NewUser): Promise<UserId> {
 	// The reason for that is that the client-side should use Accounts.createUser right away
 	// so that the password aren't sent in "plaintext" to the server.
 
-	return new Promise<UserId>((resolve, reject) => {
-		const userId = Accounts.createUser(newUser, (error) => {
-			if (error) reject(error)
-			else if (!userId) reject(new Error('Missing UserId'))
-			else resolve(protectString<UserId>(userId))
-		})
-	})
+	throw new Error('Not implemented')
+	// return new Promise<UserId>((resolve, reject) => {
+	// 	const userId = Accounts.createUser(newUser, (error) => {
+	// 		if (error) reject(error)
+	// 		else if (!userId) reject(new Error('Missing UserId'))
+	// 		else resolve(protectString<UserId>(userId))
+	// 	})
+	// })
 }

@@ -1,7 +1,7 @@
-import { Tracker } from 'meteor/tracker'
+import { Tracker } from '../../meteor/tracker'
 import * as React from 'react'
 import { stringifyObjects } from '../../lib/lib'
-import { Meteor } from 'meteor/meteor'
+import { Meteor } from '../../meteor/meteor'
 import { PubSubTypes } from '../../lib/api/pubsub'
 export class MeteorReactComponent<IProps, IState = {}> extends React.Component<IProps, IState> {
 	private _subscriptions: { [id: string]: Meteor.SubscriptionHandle } = {}

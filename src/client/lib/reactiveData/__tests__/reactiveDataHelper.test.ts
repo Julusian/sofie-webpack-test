@@ -1,5 +1,5 @@
 import { testInFiber } from '../../../../__mocks__/helpers/jest'
-import { Tracker } from 'meteor/tracker'
+import { Tracker } from '../../../../meteor/tracker'
 import { memoizedIsolatedAutorun, slowDownReactivity } from '../reactiveDataHelper'
 import { sleep } from '../../../../lib/lib'
 

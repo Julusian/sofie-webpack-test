@@ -1,4 +1,4 @@
-import { Meteor } from 'meteor/meteor'
+import { Meteor } from '../../meteor/meteor'
 import * as React from 'react'
 import { parse as queryStringParse } from 'query-string'
 import * as VelocityReact from 'velocity-react'
@@ -6,7 +6,7 @@ import { Translated, translateWithTracker } from '../lib/ReactMeteorData/react-m
 import { VTContent, TSR, NoteSeverity, ISourceLayer } from '@sofie-automation/blueprints-integration'
 import { withTranslation, WithTranslation } from 'react-i18next'
 import timer from 'react-timer-hoc'
-import CoreIcon from '@nrk/core-icons/jsx'
+import * as CoreIcon from '@nrk/core-icons/jsx'
 import { Spinner } from '../lib/Spinner'
 import ClassNames from 'classnames'
 import * as _ from 'underscore'
@@ -51,7 +51,7 @@ import {
 	getHeaderHeight,
 } from '../lib/viewPort'
 import { AfterBroadcastForm } from './AfterBroadcastForm'
-import { Tracker } from 'meteor/tracker'
+import { Tracker } from '../../meteor/tracker'
 import { RundownRightHandControls } from './RundownView/RundownRightHandControls'
 import { SourceLayers } from '../../lib/collections/ShowStyleBases'
 import { PeripheralDevicesAPI, callPeripheralDeviceFunction } from '../lib/clientAPI'
@@ -140,8 +140,8 @@ import {
 	ShowStyleBaseId,
 } from '@sofie-automation/corelib/dist/dataModel/Ids'
 import { RundownHoldState } from '@sofie-automation/corelib/dist/dataModel/RundownPlaylist'
+import { MAGIC_TIME_SCALE_FACTOR } from './SegmentTimeline/Constants'
 
-export const MAGIC_TIME_SCALE_FACTOR = 0.03
 
 const REHEARSAL_MARGIN = 1 * 60 * 1000
 const HIDE_NOTIFICATIONS_AFTER_MOUNT: number | undefined = 5000

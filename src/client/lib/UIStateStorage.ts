@@ -29,7 +29,7 @@ export namespace UIStateStorage {
 		value: boolean | BooleanMap | string | number | Record<string, any>,
 		permament?: boolean
 	) {
-		_collapsedState[scope] = _collapsedState[scope] || {}
+		_collapsedState[scope] = _collapsedState[scope] || {} as any
 		_collapsedState[scope]['_modified'] = permament ? null : Date.now()
 		_collapsedState[scope][tag] = value
 		_persist()

@@ -1,5 +1,5 @@
-import { Meteor } from 'meteor/meteor'
-import { Mongo } from 'meteor/mongo'
+import { Meteor } from '../../meteor/meteor'
+import { Mongo } from '../../meteor/mongo'
 import { MongoModifier, MongoQuery } from '../typings/meteor'
 import {
 	stringifyObjects,
@@ -10,7 +10,6 @@ import {
 	registerCollection,
 	stringifyError,
 	protectString,
-	waitForPromise,
 } from '../lib'
 import * as _ from 'underscore'
 import { logger } from '../logging'
@@ -18,7 +17,6 @@ import type { AnyBulkWriteOperation, Collection as RawCollection, Db as RawDb, C
 import { CollectionName } from '@sofie-automation/corelib/dist/dataModel/Collections'
 import { MongoFieldSpecifier, SortSpecifier } from '@sofie-automation/corelib/dist/mongo'
 import { CustomCollectionType } from '../api/pubsub'
-import { UserId } from '@sofie-automation/corelib/dist/dataModel/Ids'
 
 const ObserveChangeBufferTimeout = 2000
 
@@ -161,38 +159,12 @@ class WrappedMongoCollection<DBInterface extends { _id: ProtectedString<any> }>
 		throw new Meteor.Error((e && e.error) || 500, `Collection "${this.name}": ${str}`)
 	}
 
-	allow(args: Parameters<MongoCollection<DBInterface>['allow']>[0]): boolean {
-		const { insert: origInsert, update: origUpdate, remove: origRemove } = args
-		const options: Parameters<Mongo.Collection<DBInterface>['allow']>[0] = {
-			insert: origInsert ? (userId, doc) => waitForPromise(origInsert(protectString(userId), doc)) : undefined,
-			update: origUpdate
-				? (userId, doc, fieldNames, modifier) =>
-						waitForPromise(origUpdate(protectString(userId), doc, fieldNames as any, modifier))
-				: undefined,
-			remove: origRemove ? (userId, doc) => waitForPromise(origRemove(protectString(userId), doc)) : undefined,
-			fetch: args.fetch,
-		}
-		return this.#collection.allow(options)
-	}
-	deny(args: Parameters<MongoCollection<DBInterface>['deny']>[0]): boolean {
-		const { insert: origInsert, update: origUpdate, remove: origRemove } = args
-		const options: Parameters<Mongo.Collection<DBInterface>['deny']>[0] = {
-			insert: origInsert ? (userId, doc) => waitForPromise(origInsert(protectString(userId), doc)) : undefined,
-			update: origUpdate
-				? (userId, doc, fieldNames, modifier) =>
-						waitForPromise(origUpdate(protectString(userId), doc, fieldNames as any, modifier))
-				: undefined,
-			remove: origRemove ? (userId, doc) => waitForPromise(origRemove(protectString(userId), doc)) : undefined,
-			fetch: args.fetch,
-		}
-		return this.#collection.deny(options)
-	}
 	find(
 		selector?: MongoQuery<DBInterface> | DBInterface['_id'],
 		options?: FindOptions<DBInterface>
 	): MongoCursor<DBInterface> {
 		try {
-			return this.#collection.find((selector ?? {}) as any, options as any) as MongoCursor<DBInterface>
+			return this.#collection.find((selector ?? {}) as any, options as any) as any as MongoCursor<DBInterface>
 		} catch (e) {
 			this.wrapMongoError(e)
 		}
@@ -568,38 +540,7 @@ export interface AsyncMongoCollection<DBInterface extends { _id: ProtectedString
  * Note: when updating method signatures, make sure to update the implementions as new properties may not be fed through without additional work
  */
 export interface MongoCollection<DBInterface extends { _id: ProtectedString<any> }> {
-	/**
-	 * Allow users to write directly to this collection from client code, subject to limitations you define.
-	 */
-	allow(options: {
-		insert?: (userId: UserId, doc: DBInterface) => Promise<boolean> | boolean
-		update?: (
-			userId: UserId,
-			doc: DBInterface,
-			fieldNames: FieldNames<DBInterface>,
-			modifier: MongoModifier<DBInterface>
-		) => Promise<boolean> | boolean
-		remove?: (userId: UserId, doc: DBInterface) => Promise<boolean> | boolean
-		fetch?: string[]
-		// transform?: Function
-	}): boolean
-
-	/**
-	 * Override allow rules.
-	 */
-	deny(options: {
-		insert?: (userId: UserId, doc: DBInterface) => Promise<boolean> | boolean
-		update?: (
-			userId: UserId,
-			doc: DBInterface,
-			fieldNames: FieldNames<DBInterface>,
-			modifier: MongoModifier<DBInterface>
-		) => Promise<boolean> | boolean
-		remove?: (userId: UserId, doc: DBInterface) => Promise<boolean> | boolean
-		fetch?: string[]
-		// transform?: Function
-	}): boolean
-
+	
 	/**
 	 * Find the documents in a collection that match the selector.
 	 * @param selector A query describing the documents to find

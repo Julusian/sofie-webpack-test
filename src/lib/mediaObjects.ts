@@ -187,7 +187,7 @@ export function checkPieceContentStatus(
 	let metadata: MediaObject | null = null
 	let packageInfoToForward: ScanInfoForPackages | undefined = undefined
 	let message: string | null = null
-	const contentDuration: number | undefined = undefined
+	const contentDuration: undefined = undefined
 	const settings: IStudioSettings | undefined = studio?.settings
 	let pieceStatus: PieceStatusCode = PieceStatusCode.UNKNOWN
 

@@ -22,7 +22,7 @@ import {
 } from '@sofie-automation/blueprints-integration'
 import { DBObj, ProtectedString, objectPathGet, getRandomString } from '../../../lib/lib'
 import { MongoModifier } from '../../../lib/typings/meteor'
-import { Meteor } from 'meteor/meteor'
+import { Meteor } from '../../../meteor/meteor'
 import { getHelpMode } from '../../lib/localStorage'
 import {
 	faDownload,

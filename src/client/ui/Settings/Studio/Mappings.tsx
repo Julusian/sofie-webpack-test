@@ -1,6 +1,6 @@
 import ClassNames from 'classnames'
 import * as React from 'react'
-import { Meteor } from 'meteor/meteor'
+import { Meteor } from '../../../../meteor/meteor'
 import * as _ from 'underscore'
 import Tooltip from 'rc-tooltip'
 import { Studio, Studios, MappingExt, getActiveRoutes } from '../../../../lib/collections/Studios'
